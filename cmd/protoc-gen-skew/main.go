@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/le0developer/skew-protobuf/gen"
+	"github.com/le0developer/skew-protocol-buffers/gen"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/pluginpb"
 )

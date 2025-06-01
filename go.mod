@@ -1,4 +1,4 @@
-module github.com/le0developer/skew-protobuf
+module github.com/le0developer/skew-protocol-buffers
 
 go 1.24.3
 
