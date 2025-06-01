@@ -3,7 +3,7 @@ build:
 	mkdir -p dist
 	cat runtime/*.sk > dist/runtime.sk
 
-	go build -o dist/protoc-gen-skew cmd/main.go
+	go build -o dist/protoc-gen-skew cmd/protoc-gen-skew/main.go
 
 demo: build
 	PATH="./dist:${PATH}" protoc --skew_out=./example/demo example/demo.proto

@@ -24,7 +24,7 @@ You need to have the protoc compiler and [Go](https://go.dev/) installed on your
 3. Install the protoc-gen-skew plugin (or copy the file from `dist/` to your `$GOPATH/bin`):
 
    ```bash
-    go install github.com/le0developer/skew-protocol-buffers/protoc-gen-skew@latest
+   go install github.com/le0developer/skew-protocol-buffers/cmd/protoc-gen-skew@latest
    ```
 
 4. Copy the `dist/runtime.sk` file to your project directory. It contains the runtime definitions needed to work with protocol buffers in Skew.
