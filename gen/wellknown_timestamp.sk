@@ -1,0 +1,33 @@
+class Timestamp {
+  def asDate dynamic {
+    var s = self.seconds.unwrapOr(0)
+    var ns = self.nanos.unwrapOr(0)
+    return dynamic.Date.new(s * 1000 + ns / 1000000)
+  }
+
+#  def +(other Duration) Timestamp {
+#    var s = self.seconds.unwrapOr(0) + other.seconds.unwrapOr(0)
+#    var ns = self.nanos.unwrapOr(0) + other.nanos.unwrapOr(0)#
+#    if ns >= 1000000000 {
+#      s += ns / 1000000000
+#      ns = ns % 1000000000
+#    }
+#    var ts = Timestamp.new
+#    ts.seconds = s
+#    ts.nanos = ns
+#    return ts
+#  }
+#
+#  def -(other Timestamp) Duration {
+#    var s = self.seconds.unwrapOr(0) - other.seconds.unwrapOr(0)
+#    var ns = self.nanos.unwrapOr(0) - other.nanos.unwrapOr(0)
+#    if ns < 0 {
+#      s -= 1
+#      ns += 1000000000
+#    }
+#    var duration = Duration.new
+#    duration.seconds = s
+#    duration.nanos = ns
+#    return duration
+#  }
+}

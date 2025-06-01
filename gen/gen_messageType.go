@@ -1,0 +1,390 @@
+package gen
+
+import (
+	"fmt"
+	"math/rand"
+	"strconv"
+	"strings"
+
+	"google.golang.org/protobuf/types/descriptorpb"
+)
+
+func (g *Gen) generateMessageType(namespace string, messageType *descriptorpb.DescriptorProto) error {
+	name := messageType.GetName()
+	if name == "" {
+		return fmt.Errorf("message type has no name")
+	}
+	fullName := namespace + "." + name
+
+	oneOfs := []*oneOfInfo{}
+	for i, oneof := range messageType.OneofDecl {
+		name := oneof.GetName()
+		if name == "" {
+			return fmt.Errorf("oneof in message type %s has no name", name)
+		}
+
+		oneOfs = append(oneOfs, &oneOfInfo{
+			Name:   title(name),
+			Index:  i,
+			Fields: []fieldInfo{},
+		})
+	}
+
+	fields := []fieldInfo{}
+
+	for _, field := range messageType.Field {
+		fieldName := field.GetName()
+		if fieldName == "" {
+			return fmt.Errorf("field in message type %s has no name", name)
+		}
+
+		fieldType := field.GetType().String()
+		if fieldType == "" {
+			return fmt.Errorf("field %s in message type %s has no type", fieldName, name)
+		}
+
+		typeInfo, ok := typeMap[field.GetType()]
+		if !ok {
+			return fmt.Errorf("unsupported field type %s for field %s in message type %s", fieldType, fieldName, name)
+		}
+
+		fieldInfo := fieldInfo{
+			Field:      field,
+			TypeInfo:   typeInfo,
+			SkewType:   typeInfo.SkewType,
+			Repeated:   field.GetLabel() == descriptorpb.FieldDescriptorProto_LABEL_REPEATED,
+			HasDefault: field.GetDefaultValue() != "",
+		}
+
+		if fieldInfo.SkewType == "" {
+			typ := field.GetTypeName()
+			if strings.HasPrefix(typ, ".") {
+				typ = strings.TrimPrefix(typ, ".")
+			}
+			fieldInfo.SkewType = typ
+		}
+
+		if field.OneofIndex != nil {
+			oneOf := oneOfs[*field.OneofIndex]
+			oneOf.Fields = append(oneOf.Fields, fieldInfo)
+		}
+
+		fields = append(fields, fieldInfo)
+	}
+
+	g.W.WriteLinef("# %s", fullName)
+	if messageType.Options.GetDeprecated() {
+		g.W.WriteLine("@deprecated")
+	}
+	g.W.WriteLinef("class %s {", name)
+	g.W.WriteLine("# field definitions")
+
+	// Randomize field order to avoid any implicit dependencies
+	rand.Shuffle(len(fields), func(i, j int) {
+		fields[i], fields[j] = fields[j], fields[i]
+	})
+	for _, field := range fields {
+		g.W.WriteLinef("var %s = %s", field.PrivateName(), field.Initializer())
+	}
+	g.W.WriteLine("")
+	for _, oneof := range oneOfs {
+		g.W.WriteLinef("var _oneof_%d = %s.%s.None", oneof.Index, name, oneof.Name)
+	}
+	g.W.WriteLine("")
+	g.W.WriteLine("var _unknownFields = List<int>.new")
+
+	g.W.WriteLine("")
+	g.W.WriteLine("# field accessors")
+	for _, field := range fields {
+		g.generateMessageFieldAccessor(field)
+	}
+
+	g.W.WriteLine("# oneofs accessors")
+	for _, oneof := range oneOfs {
+		g.W.WriteLinef("def Which%s %s.%s {", oneof.Name, name, oneof.Name)
+		g.W.WriteLinef("return _oneof_%d", oneof.Index)
+		g.W.WriteLine("}")
+	}
+
+	g.W.WriteLine("")
+	g.W.WriteLine("# marshal")
+	g.W.WriteLine("def marshal List<int> {")
+	g.W.WriteLine("var writer = proto.Writer.new")
+
+	rand.Shuffle(len(fields), func(i, j int) {
+		fields[i], fields[j] = fields[j], fields[i]
+	})
+	for _, field := range fields {
+		g.generateMessageFieldMarshaller(field)
+	}
+
+	g.W.WriteLinef("writer.write(_unknownFields)")
+	g.W.WriteLinef("return writer.buffer")
+
+	g.W.WriteLine("}")
+
+	g.W.WriteLine("}")
+
+	g.W.WriteLinef("namespace %s {", name)
+	g.W.WriteLine("# unmarshal")
+	g.W.WriteLinef("def unmarshal(reader proto.Reader) %s {", name)
+	g.W.WriteLinef("var message = %s.new", name)
+	g.W.WriteLine("while !reader.done {")
+	g.W.WriteLine("var start = reader.position")
+	g.W.WriteLine("var tag = reader.readTag")
+
+	rand.Shuffle(len(fields), func(i, j int) {
+		fields[i], fields[j] = fields[j], fields[i]
+	})
+	g.W.WriteLine("switch tag.fieldNumber {")
+	for _, field := range fields {
+		g.generateMessageFieldUnmarshaller(field, name, oneOfs)
+	}
+	g.W.WriteLine("default {")
+	g.W.WriteLine("message._unknownFields.append(reader.readRaw(tag, start))")
+	g.W.WriteLine("}")
+	g.W.WriteLine("}")
+	g.W.WriteLine("}")
+
+	g.W.WriteLine("return message")
+	g.W.WriteLine("}")
+	g.W.WriteLine("")
+	g.W.WriteLinef("def unmarshal(buffer List<int>) %s {", name)
+	g.W.WriteLine("return unmarshal(proto.Reader.new(buffer))")
+	g.W.WriteLine("}")
+
+	g.W.WriteLine("")
+	g.W.WriteLine("# nested message types")
+	for _, nestedMessage := range messageType.NestedType {
+		if err := g.generateMessageType(fullName, nestedMessage); err != nil {
+			return fmt.Errorf("error generating nested message type %s in message type %s: %w", nestedMessage.GetName(), name, err)
+		}
+	}
+
+	g.W.WriteLine("")
+	g.W.WriteLine("# nested enum types")
+	for _, nestedEnum := range messageType.EnumType {
+		if err := g.generateEnumType(nestedEnum); err != nil {
+			return fmt.Errorf("error generating nested enum type %s in message type %s: %w", nestedEnum.GetName(), name, err)
+		}
+	}
+
+	g.W.WriteLine("# oneofs")
+	for _, oneof := range oneOfs {
+		g.W.WriteLinef("enum %s {", oneof.Name)
+		g.W.WriteLinef("None")
+		for _, field := range oneof.Fields {
+			if field.Field.Options.GetDeprecated() {
+				g.W.WriteLine("@deprecated")
+			}
+			g.W.WriteLinef("%s", title(field.Name()))
+		}
+		g.W.WriteLine("}")
+	}
+
+	g.W.WriteLine("}")
+
+	g.W.WriteLine("")
+	g.W.WriteLine("# wellknown")
+	g.genWellKnown(fullName)
+
+	return nil
+}
+
+func (g *Gen) generateMessageFieldAccessor(field fieldInfo) {
+	if field.Field.Options.GetDeprecated() {
+		g.W.WriteLine("@deprecated")
+	}
+	g.W.WriteLinef("def %s %s {", field.Name(), field.WrappedSkewType())
+	g.W.WriteLinef("return %s", field.PrivateName())
+	g.W.WriteLine("}")
+	g.W.WriteLine("")
+
+	if !field.Repeated && !field.HasDefault {
+		g.W.WriteLine("@prefer")
+		if field.Field.Options.GetDeprecated() {
+			g.W.WriteLine("@deprecated")
+		}
+		g.W.WriteLinef("def %s=(value %s) {", field.Name(), field.CollectionType())
+		g.W.WriteLinef("%s = some<%s>(value)", field.PrivateName(), field.CollectionType())
+		g.W.WriteLine("}")
+		g.W.WriteLine("")
+	}
+
+	if field.Field.Options.GetDeprecated() {
+		g.W.WriteLine("@deprecated")
+	}
+	g.W.WriteLinef("def %s=(value %s) {", field.Name(), field.WrappedSkewType())
+	g.W.WriteLinef("%s = value", field.PrivateName())
+	g.W.WriteLine("}")
+	g.W.WriteLine("")
+}
+
+func (g *Gen) generateMessageFieldMarshaller(field fieldInfo) {
+	val := field.PrivateName()
+	if !field.HasDefault {
+		val = fmt.Sprintf("%s.unwrapUnchecked", val)
+	}
+
+	if field.Repeated {
+		g.W.WriteLinef("if %s.count > 0 {", field.PrivateName())
+		if field.TypeInfo.Packable() {
+			g.W.WriteLinef("if %s.count == 1 {", field.PrivateName())
+			val = field.PrivateName() + "[0]"
+		} else {
+			g.W.WriteLinef("for item in %s {", field.PrivateName())
+			val = "item"
+		}
+	} else if !field.HasDefault {
+		g.W.WriteLinef("if %s.isSome {", field.PrivateName())
+	}
+	if field.TypeInfo.Enum {
+		g.W.WriteLinef("writer.writeVarInt(%d, %s)", field.Field.GetNumber(), val)
+	} else if field.TypeInfo.SkewType == "" {
+		g.W.WriteLinef("writer.writeBytes(%d, %s.marshal)", field.Field.GetNumber(), val)
+	} else {
+		g.W.WriteLinef("writer.write%s(%d, %s)", field.Serialize(), field.Field.GetNumber(), field.Encode(val))
+	}
+
+	if field.Repeated {
+		if field.TypeInfo.Packable() {
+			g.W.WriteLinef("} else {")
+			g.W.WriteLinef("var buffer = proto.Writer.new")
+			g.W.WriteLinef("for item in %s {", field.PrivateName())
+			g.W.WriteLinef("buffer.writeVarInt(%s)", field.Encode("item"))
+			g.W.WriteLine("}")
+			g.W.WriteLinef("writer.writeBytes(%d, buffer.buffer)", field.Field.GetNumber())
+		}
+		g.W.WriteLine("}")
+	}
+	if !field.HasDefault {
+		g.W.WriteLine("}")
+	}
+}
+
+func (g *Gen) generateMessageFieldUnmarshaller(field fieldInfo, name string, oneOfs []*oneOfInfo) {
+	g.W.WriteLinef("case %d {", field.Field.GetNumber())
+
+	value := field.Decode(fmt.Sprintf("reader.read%s", field.Serialize()))
+	if field.Repeated {
+		if field.TypeInfo.Packable() {
+			g.W.WriteLine("if tag.tag == .LEN {")
+			g.W.WriteLine("var buffer = proto.Reader.new(reader.readBytes)")
+			g.W.WriteLine("while !buffer.done {")
+			g.W.WriteLinef("message.%s.append(%s)", field.Name(), strings.ReplaceAll(value, "reader.", "buffer."))
+			g.W.WriteLine("}")
+			g.W.WriteLine("} else {")
+			g.W.WriteLinef("assert(tag.tag == .%s)", field.TypeInfo.WireType())
+			g.W.WriteLinef("message.%s.append(%s)", field.PrivateName(), value)
+			g.W.WriteLine("}")
+		} else {
+			g.W.WriteLinef("assert(tag.tag == .%s)", field.TypeInfo.WireType())
+			g.W.WriteLinef("message.%s.append(%s)", field.PrivateName(), value)
+		}
+	} else {
+		g.W.WriteLinef("assert(tag.tag == .%s)", field.TypeInfo.WireType())
+		if !field.HasDefault {
+			value = fmt.Sprintf("some<%s>(%s)", field.CollectionType(), value)
+		}
+		g.W.WriteLinef("message.%s = %s", field.PrivateName(), value)
+	}
+
+	if field.Field.OneofIndex != nil {
+		oneOf := oneOfs[*field.Field.OneofIndex]
+		g.W.WriteLinef("message._oneof_%d = %s.%s.%s", *field.Field.OneofIndex, name, oneOf.Name, title(field.Name()))
+	}
+
+	g.W.WriteLine("}")
+}
+
+type fieldInfo struct {
+	Field      *descriptorpb.FieldDescriptorProto
+	TypeInfo   Type
+	SkewType   string
+	Repeated   bool
+	HasDefault bool
+}
+
+func (f fieldInfo) Name() string {
+	if f.Field.GetJsonName() != "" {
+		return f.Field.GetJsonName()
+	}
+	return f.Field.GetName()
+}
+
+func (f fieldInfo) PrivateName() string {
+	return "__" + f.Name()
+}
+
+func (f fieldInfo) CollectionType() string {
+	if f.Repeated {
+		return "List<" + f.SkewType + ">"
+	}
+	return f.SkewType
+}
+
+func (f fieldInfo) WrappedSkewType() string {
+	if f.Repeated || f.HasDefault {
+		return f.CollectionType()
+	}
+	return "Option<" + f.CollectionType() + ">"
+}
+
+func (f fieldInfo) Initializer() string {
+	if f.Repeated {
+		return f.CollectionType() + ".new"
+	}
+	if f.HasDefault {
+		defaultValue := f.Field.GetDefaultValue()
+		if f.TypeInfo.SkewType == "string" {
+			return strconv.Quote(defaultValue)
+		} else if f.TypeInfo.Enum {
+			return fmt.Sprintf("%s.%s", f.SkewType, defaultValue)
+		}
+
+		return defaultValue
+	}
+	return "none<" + f.CollectionType() + ">()"
+}
+
+func (f fieldInfo) Serialize() string {
+	if f.TypeInfo.Fixed > 0 {
+		return "Int" + fmt.Sprintf("%d", f.TypeInfo.Fixed*8)
+	}
+	if f.TypeInfo.SkewType == "string" {
+		return "String"
+	}
+	if f.TypeInfo.Bytes {
+		return "Bytes"
+	}
+	return "VarInt"
+}
+
+func (f fieldInfo) Encode(inner string) string {
+	// if f.TypeInfo.Enum {
+	// 	return fmt.Sprintf("%s as int", inner)
+	// }
+	if f.TypeInfo.Encoder != "" {
+		return fmt.Sprintf("proto.internal_encoding.%s.encode(%s)", f.TypeInfo.Encoder, inner)
+	}
+	return inner
+}
+
+func (f fieldInfo) Decode(inner string) string {
+	if f.TypeInfo.Enum {
+		return fmt.Sprintf("%s as %s", inner, f.SkewType)
+	}
+	if f.TypeInfo.Message {
+		return fmt.Sprintf("%s.unmarshal(%s)", f.SkewType, inner)
+	}
+	if f.TypeInfo.Encoder != "" {
+		return fmt.Sprintf("proto.internal_encoding.%s.decode(%s)", f.TypeInfo.Encoder, inner)
+	}
+	return inner
+}
+
+type oneOfInfo struct {
+	Name   string
+	Index  int
+	Fields []fieldInfo
+}

@@ -1,0 +1,34 @@
+
+@entry
+def main {
+  var x = tutorial.Person.new
+  x.name = "John Doe"
+  x.id = 123
+  x.email = "john@doe.com"
+  x.age = 1.85
+  var phone = tutorial.Person.PhoneNumber.new
+  phone.number = "123-456-7890"
+  phone.type = tutorial.Person.PhoneType.MOBILE
+  x.phones.append(phone)
+  x.scores.append(100)
+  x.scores.append(150)
+  x.scores.append(200)
+
+  var marshaled = x.marshal
+  marshaled.append([200, 1, 172, 2, 144, 3])
+  dynamic.console.log(marshaled)
+
+  var y = tutorial.Person.unmarshal(marshaled)
+  dynamic.console.log("name", y.name)
+  dynamic.console.log("id", y.id)
+  dynamic.console.log("email", y.email)
+  dynamic.console.log("age", y.age)
+  dynamic.console.log("phones", y.phones)
+  dynamic.console.log("scores", y.scores)
+  dynamic.console.log("lastUpdated", y.lastUpdated)
+  dynamic.console.log(y)
+
+  var marshaled2 = y.marshal
+  dynamic.console.log("marshaled2", marshaled2)
+}
+

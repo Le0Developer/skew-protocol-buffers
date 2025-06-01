@@ -1,0 +1,31 @@
+namespace tests {
+  var testing = lester.describe("testing", (t) => {
+    t.describe("Testing Suite", (suite) => {
+      suite.it("should run a simple test", (t) => {
+        t.equal(1, 1)
+      })
+
+      suite.it("should handle failing tests", (t) => {
+        var failed = false
+        try {
+          t.equal(1, 2)
+        } catch e dynamic {
+          failed = true
+        }
+        if !failed {
+          t.fail("Expected test to fail")
+        }
+      })
+    })
+  })
+
+  @entry if TEST
+  def main int {
+    return lester.runTests([
+      # tests.testing,
+      encoding,
+      reader,
+      writer,
+    ])
+  }
+}

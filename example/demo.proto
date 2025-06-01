@@ -1,0 +1,39 @@
+edition = "2023";
+package tutorial;
+
+import "google/protobuf/timestamp.proto";
+option go_package = "github.com/example/tutorial;tutorial";
+
+message Person {
+  string name = 1;
+  int32 id = 2;  // Unique ID number for this person.
+  string email = 3 [default = ""];
+  float age = 9;
+
+  enum PhoneType {
+    MOBILE = 0;
+    HOME = 1;
+    WORK = 2;
+  }
+
+  message PhoneNumber {
+    string number = 1 [default="+1234567890"];
+    PhoneType type = 2 [default = WORK];
+  }
+
+  repeated PhoneNumber phones = 4;
+
+  google.protobuf.Timestamp last_updated = 5;
+
+  repeated sint32 scores = 6;
+
+  oneof avatar {
+    string image_url = 7;
+    bytes image_data = 8;
+  }
+}
+
+// Our address book file is just one of these.
+message AddressBook {
+  repeated Person people = 1;
+}

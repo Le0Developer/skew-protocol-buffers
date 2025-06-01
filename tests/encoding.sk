@@ -1,0 +1,78 @@
+namespace tests {
+  var encoding = lester.describe("encoding", (t) => {
+    t.describe("TagLengthValue", (unit) => {
+      unit.it("constructor", (t) => {
+        var tlv = proto.TagLengthValue.new(proto.Tag.VARINT, 1)
+        t.equal(tlv.toInt, 8)
+        t.equal(tlv.tag, proto.Tag.VARINT)
+        t.equal(tlv.fieldNumber, 1)
+      })
+
+      unit.it("from int", (t) => {
+        var tlv = proto.TagLengthValue.fromInt(8)
+        t.equal(tlv.toInt, 8)
+        t.equal(tlv.tag, proto.Tag.VARINT)
+        t.equal(tlv.fieldNumber, 1)
+      })
+    })
+
+    t.describe("ZigZag", (unit) => {
+      unit.it("encode", (t) => {
+        t.equal(proto.internal_encoding.ZigZag.encode(0), 0)
+        t.equal(proto.internal_encoding.ZigZag.encode(1), 2)
+        t.equal(proto.internal_encoding.ZigZag.encode(-1), 1)
+        t.equal(proto.internal_encoding.ZigZag.encode(2), 4)
+        t.equal(proto.internal_encoding.ZigZag.encode(-2), 3)
+      })
+
+      unit.it("decode", (t) => {
+        t.equal(proto.internal_encoding.ZigZag.decode(0), 0)
+        t.equal(proto.internal_encoding.ZigZag.decode(2), 1)
+        t.equal(proto.internal_encoding.ZigZag.decode(1), -1)
+        t.equal(proto.internal_encoding.ZigZag.decode(4), 2)
+        t.equal(proto.internal_encoding.ZigZag.decode(3), -2)
+      })
+    })
+
+    t.describe("Float", (unit) => {
+      unit.it("encode", (t) => {
+        t.equal(proto.internal_encoding.Float.encode(0.0), 0)
+        t.equal(proto.internal_encoding.Float.encode(1.0), 1065353216)
+        t.equal(proto.internal_encoding.Float.encode(-1.0), -1082130432)
+        t.equal(proto.internal_encoding.Float.encode(3.14), 1078523329)
+      })
+
+      unit.it("decode", (t) => {
+        t.close(proto.internal_encoding.Float.decode(0), 0.0)
+        t.close(proto.internal_encoding.Float.decode(1065353216), 1.0)
+        t.close(proto.internal_encoding.Float.decode(-1082130432), -1.0)
+        t.close(proto.internal_encoding.Float.decode(1078523329), 3.14)
+      })
+
+      unit.it("NAN", (t) => {
+        t.equal(proto.internal_encoding.Float.encode(Math.NAN), 0x7fc00000) # NaN in IEEE 754
+        t.truthy(proto.internal_encoding.Float.decode(2143289344).isNaN) # NaN in IEEE 754
+        t.truthy(proto.internal_encoding.Float.decode(0x7fc00000).isNaN) # Another representation of NaN
+      })
+
+      unit.it("infinity", (t) => {
+        t.equal(proto.internal_encoding.Float.encode(Math.INFINITY), 0x7f800000) # Positive infinity in IEEE 754
+        t.equal(proto.internal_encoding.Float.encode(-Math.INFINITY), 0xff800000) # Negative infinity in IEEE 754
+        t.close(proto.internal_encoding.Float.decode(0x7f800000), Math.INFINITY) # Positive infinity
+        t.close(proto.internal_encoding.Float.decode(0xff800000), -Math.INFINITY) # Negative infinity
+      })
+
+      unit.it("fuzz", (t) => {
+        t.fuzz((v int) => {
+          var encoded = proto.internal_encoding.Float.encode(v)
+          var decoded = proto.internal_encoding.Float.decode(encoded)
+          t.close(decoded, v)
+
+          var encoded2 = proto.internal_encoding.Float.encode(decoded)
+          var decoded2 = proto.internal_encoding.Float.decode(encoded2)
+          t.close(decoded2, decoded)
+        })
+      })
+    })
+  })
+}

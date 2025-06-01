@@ -1,0 +1,134 @@
+# Select parts of https://github.com/Le0Developer/skew-vendor required to run
+# protobuf
+
+type Option<T> : T {
+  def isNone bool {
+    return (self as dynamic) == null
+  }
+  def isSome bool {
+    return (self as dynamic) != null
+  }
+
+  def unwrapUnchecked T {
+    return self as T
+  }
+
+  def expect(error dynamic) T {
+    return unwrapUnchecked ?? panic(error)
+  }
+
+  def unwrap T {
+    return expect(StandardExceptionCode.UNWRAP_OPTION_NONE)
+  }
+
+  def unwrapOr(fallback T) T {
+    return unwrapUnchecked ?? fallback
+  }
+
+  def unwrapOr(transform fn() T) T {
+    return unwrapUnchecked ?? transform()
+  }
+
+  def filter(callback fn(T) bool) Option<T> {
+    return isNone || callback(unwrapUnchecked) ? self : none<T>()
+  }
+
+  def map<U>(transform fn(T) U) Option<U> {
+    return isNone ? none<U>() : some<U>(transform(unwrapUnchecked))
+  }
+
+  def mapOr<U>(fallback U, transform fn(T) U) U {
+    return isNone ? fallback : transform(unwrapUnchecked)
+  }
+
+  def mapOr<U>(fallback fn() U, transform fn(T) U) U {
+    return isNone ? fallback() : transform(unwrapUnchecked)
+  }
+
+  def tryOr(callback fn() Option<T>) Option<T> {
+    return self ?? callback()
+  }
+
+  def iter List<T> {
+    return isSome ? [unwrapUnchecked] : []
+  }
+
+  def toString string {
+    return RELEASE ? (self as dynamic).toString() : isNone ? "None" : "Some(\(unwrapUnchecked as dynamic))"
+  }
+}
+
+def some<T>(value T) Option<T> {
+  return value as dynamic
+}
+
+def none<T> Option<T> {
+  return null as dynamic
+}
+
+def panic(message dynamic) dynamic {
+  throw message
+}
+
+def unreachable dynamic {
+  return panic(StandardExceptionCode.UNREACHABLE)
+}
+
+enum StandardExceptionCode {
+  UNWRAP_OPTION_NONE
+  UNWRAP_RESULT_ERROR
+  UNWRAP_RESULT_OK
+  UNREACHABLE
+}
+
+namespace encoding.utf8 {
+  # utf32 code points to utf8 bytes
+  def encode(codePoints List<int>) List<int> {
+    var bytes = List<int>.new
+    for codePoint in codePoints {
+      assert(codePoint >= 0 && codePoint < 0x110000)
+      if codePoint < 0x80 {
+        bytes.append(codePoint)
+      } else if codePoint < 0x800 {
+        bytes.append(0xC0 | (codePoint >> 6))
+        bytes.append(0x80 | (codePoint & 0x3F))
+      } else if codePoint < 0x10000 {
+        bytes.append(0xE0 | (codePoint >> 12))
+        bytes.append(0x80 | ((codePoint >> 6) & 0x3F))
+        bytes.append(0x80 | (codePoint & 0x3F))
+      } else {
+        bytes.append(0xF0 | (codePoint >> 18))
+        bytes.append(0x80 | ((codePoint >> 12) & 0x3F))
+        bytes.append(0x80 | ((codePoint >> 6) & 0x3F))
+        bytes.append(0x80 | (codePoint & 0x3F))
+      }
+    }
+    return bytes
+  }
+
+  # utf8 bytes to utf32 code points
+  def decode(bytes List<int>) List<int> {
+    var codePoints = List<int>.new
+    var i = 0
+    while i < bytes.count {
+      var byte = bytes[i]
+      if byte < 0x80 {
+        codePoints.append(byte)
+        i += 1
+      } else if (byte & 0xE0) == 0xC0 {
+        assert(i + 1 < bytes.count)
+        codePoints.append(((byte & 0x1F) << 6) | (bytes[i + 1] & 0x3F))
+        i += 2
+      } else if (byte & 0xF0) == 0xE0 {
+        assert(i + 2 < bytes.count)
+        codePoints.append(((byte & 0x0F) << 12) | ((bytes[i + 1] & 0x3F) << 6) | (bytes[i + 2] & 0x3F))
+        i += 3
+      } else {
+        assert(i + 3 < bytes.count)
+        codePoints.append(((byte & 0x07) << 18) | ((bytes[i + 1] & 0x3F) << 12) | ((bytes[i + 2] & 0x3F) << 6) | (bytes[i + 3] & 0x3F))
+        i += 4
+      }
+    }
+    return codePoints
+  }
+}

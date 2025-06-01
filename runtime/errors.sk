@@ -1,0 +1,6 @@
+namespace proto {
+  enum ErrorCode {
+    EOF
+    WRONG_TAG
+  }
+}

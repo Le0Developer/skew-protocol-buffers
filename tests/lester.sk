@@ -1,0 +1,162 @@
+const TEST = false
+const TEST_DEBUG = false
+
+namespace lester {
+  class Test {
+    var name string
+    var parents List<string>
+    var testFn fn(TestingSuite)
+
+    def fullName string {
+      var segments = parents.clone
+      segments.append(name)
+      return " > ".join(segments)
+    }
+  }
+
+  def describe(name string, unitFn fn(TestUnit)) TestUnit {
+    var unit = TestUnit.new(name, List<string>.new, List<Test>.new, List<TestUnit>.new)
+    unitFn(unit)
+    return unit
+  }
+
+  class TestUnit {
+    var name string
+    var parentUnits List<string>
+    var tests List<Test>
+    var units List<TestUnit>
+
+    def describe(name string, unitFn fn(TestUnit)) {
+      var builder = TestUnit.new(name, _parentsWithSelf, List<Test>.new, List<TestUnit>.new)
+      unitFn(builder)
+      units.append(builder)
+    }
+
+    def it(name string, testFn fn(TestingSuite)) {
+      var test = Test.new(name, _parentsWithSelf, testFn)
+      tests.append(test)
+    }
+
+    def _parentsWithSelf List<string> {
+      var result = parentUnits.clone
+      result.append(name)
+      return result
+    }
+
+    def run bool {
+      var failed = false
+      if tests.count > 0 {
+        print("\(fullName)")
+        for test in tests {
+          # print("[.] \(test.fullName)")
+          try {
+            test.testFn(TestingSuite.new)
+            print("[√] \(test.fullName)")
+          } catch e dynamic {
+            print("[x] \(test.fullName) - \(e)")
+            failed = true
+          }
+        }
+      }
+      for unit in units {
+        if unit.run {
+          failed = true
+        }
+      }
+      return failed
+    }
+
+    def fullName string {
+      var segments = parentUnits.clone
+      segments.append(name)
+      return " > ".join(segments)
+    }
+  }
+
+  class TestingSuite {
+    def equalList<T>(a List<T>, b List<T>) {
+      if a.count != b.count {
+        fail("Expected \(a as dynamic) to equal \(b as dynamic)")
+      }
+      for i in 0 .. a.count {
+        if a[i] != b[i] {
+          fail("Expected \(a as dynamic) to equal \(b as dynamic) at index \(i)")
+        }
+      }
+    }
+
+    def equal(a dynamic, b dynamic) {
+      if a != b {
+        fail("Expected \(a) to equal \(b)")
+      }
+    }
+
+    def close(a double, b double) {
+      var r = a / b
+      var d = Math.abs(a - b)
+      if d > 1e-6 && (r < 0.9999 || r > 1.0001) {
+        fail("Expected \(a) to be close to \(b) (d=\(d),r=\(r))")
+      }
+    }
+
+    def truthy(value dynamic) {
+      if !value {
+        fail("Expected value to be true")
+      }
+    }
+
+    def falsy(value dynamic) {
+      if !!value {
+        fail("Expected value to be false")
+      }
+    }
+
+    def throws(fn fn()) {
+      var threw = false
+      try {
+        fn()
+      } catch e dynamic {
+        threw = true
+      }
+      if !threw {
+        fail("Expected function to throw an error")
+      }
+    }
+
+    def fail(message string) {
+      throw "Test failed: \(message)"
+    }
+
+    def fuzz(fn fn(int)) {
+      var value = 1337
+      for i in 0 .. 1000 {
+        try {
+          fn(value)
+        } catch e dynamic {
+          throw "Fuzz test failed on iteration \(i) with value \(value): \(e)"
+        }
+        value = value * 0xDEADBEEF + 0xCAFEBABE
+      }
+    }
+  }
+
+  def runTests(units List<TestUnit>) int {
+    var failed = 0
+    for unit in units {
+      if unit.run {
+        failed += 1
+      }
+    }
+    if failed > 0 {
+      print("Tests completed with \(failed) failures.")
+      return 1
+    }
+    print("All tests passed!")
+    return 0
+  }
+
+  def print(message string) {
+    # Print the message to the console
+    dynamic.console.log(message)
+  }
+}

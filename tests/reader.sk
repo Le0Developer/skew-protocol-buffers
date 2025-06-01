@@ -1,0 +1,113 @@
+namespace tests {
+  var reader = lester.describe("reader", (t) => {
+    t.describe("varint", (suite) => {
+      suite.it("should decode simple int", (t) => {
+        var reader = proto.Reader.new([0x96, 0x01])
+        t.equal(reader.readVarInt, 150)
+      })
+      suite.it("should decode large int", (t) => {
+        var reader = proto.Reader.new([0xC0, 0x8D, 0xB7, 0x01])
+        t.equal(reader.readVarInt, 3000000)
+      })
+
+      suite.it("should decode negative int", (t) => {
+        var reader = proto.Reader.new([0xFF, 0xFF, 0xFF, 0xFF, 0x0F])
+        t.equal(reader.readVarInt, -1)
+      })
+
+      suite.it("should decode 64bit negative int", (t) => {
+        var reader = proto.Reader.new([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x01])
+        t.equal(reader.readVarInt, -1)
+      })
+
+      suite.it("should decode -150", (t) => {
+        var reader = proto.Reader.new([0xEA, 0xFE, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x01])
+        t.equal(reader.readVarInt, -150)
+      })
+    })
+
+    t.describe("string", (suite) => {
+      suite.it("should decode hello world", (t) => {
+        var reader = proto.Reader.new([0x0C, 0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x2C, 0x20, 0x57, 0x6F, 0x72, 0x6C, 0x64])
+        t.equal(reader.readString, "Hello, World")
+      })
+
+      suite.it("should decode utf8", (t) => {
+        var reader = proto.Reader.new([0x06, 0xC3, 0xA4, 0xC3, 0xB6, 0xC3, 0xBC])
+        t.equal(reader.readString, "äöü")
+      })
+
+      suite.it("should decode int32", (t) => {
+        var reader = proto.Reader.new([0x01, 0x00, 0x00, 0x00])
+        t.equal(reader.readInt32, 1)
+      })
+
+      suite.it("should decode negative int32", (t) => {
+        var reader = proto.Reader.new([0xFF, 0xFF, 0xFF, 0xFF])
+        t.equal(reader.readInt32, -1)
+      })
+    })
+
+    # We need to be able to read unknown fields where we don't know the expected tag
+    # beforehand.
+    t.describe("unknown fields", (suite) => {
+      suite.it("varint", (t) => {
+        var reader = proto.Reader.new([0x08, 0x96, 0x01])
+        var tag = reader.readTag
+        t.equal(tag.tag, proto.Tag.VARINT)
+        t.equal(tag.fieldNumber, 1)
+        
+        var buffer = reader.readRaw(tag, 0)
+        t.equalList<int>(buffer, reader.buffer)
+        t.truthy(reader.done)
+      })
+
+      # We dont even support parsing 64bit values, but we can still read them just fine
+      # so if they're in unknown fields, we can preserve them.
+      suite.it("i64", (t) => {
+        var reader = proto.Reader.new([0x09, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08])
+        var tag = reader.readTag
+        t.equal(tag.tag, proto.Tag.I64)
+        t.equal(tag.fieldNumber, 1)
+
+        var buffer = reader.readRaw(tag, 0)
+        t.equalList<int>(buffer, reader.buffer)
+        t.truthy(reader.done)
+      })
+
+      suite.it("len", (t) => {
+        var reader = proto.Reader.new([0x0A, 0x03, 0x66, 0x6F, 0x6F])
+        var tag = reader.readTag
+        t.equal(tag.tag, proto.Tag.LEN)
+        t.equal(tag.fieldNumber, 1)
+
+        var buffer = reader.readRaw(tag, 0)
+        t.equalList<int>(buffer, reader.buffer)
+        t.truthy(reader.done)
+      })
+
+      # Groups are not supported and should throw
+      suite.it("sgroup", (t) => {
+        var reader = proto.Reader.new([0x0B, 0x01, 0x02, 0x03])
+        var tag = reader.readTag
+        t.equal(tag.tag, proto.Tag.SGROUP)
+        t.equal(tag.fieldNumber, 1)
+
+        t.throws(() => {
+          reader.readRaw(tag, 0)
+        })
+      })
+
+      suite.it("i32", (t) => {
+        var reader = proto.Reader.new([0x0D, 0x01, 0x00, 0x00, 0x00])
+        var tag = reader.readTag
+        t.equal(tag.tag, proto.Tag.I32)
+        t.equal(tag.fieldNumber, 1)
+
+        var buffer = reader.readRaw(tag, 0)
+        t.equalList<int>(buffer, reader.buffer)
+        t.truthy(reader.done)
+      })
+    })
+  })
+}

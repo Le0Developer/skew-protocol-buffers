@@ -1,0 +1,99 @@
+namespace proto {
+  # https://protobuf.dev/programming-guides/encoding/#structure
+  enum Tag {
+    VARINT
+    I64
+    LEN
+    SGROUP
+    EGROUP
+    I32
+  }
+
+  type TagLengthValue : int {
+    def tag Tag {
+      return (toInt & 0x7) as Tag
+    }
+
+    def fieldNumber int {
+      return toInt >> 3
+    }
+
+    def toInt int {
+      return self as int
+    }
+
+    @skip if RELEASE
+    def expect(expected Tag) {
+      if tag != expected {
+        throw ErrorCode.WRONG_TAG
+      }
+    }
+  }
+  
+  namespace TagLengthValue {
+    def new(tag Tag, fieldNumber int) TagLengthValue {
+      return ((fieldNumber << 3) | tag) as TagLengthValue
+    }
+
+    def fromInt(value int) TagLengthValue {
+      return value as TagLengthValue
+    }
+  }
+
+  namespace internal_encoding {
+    # https://protobuf.dev/programming-guides/encoding/#signed-ints
+    namespace ZigZag {
+      def encode(value int) int {
+        return (value << 1) ^ (value >> 31)
+      }
+
+      def decode(value int) int {
+        return (value >> 1) ^ -(value & 1)
+      }
+    }
+
+    namespace Float {
+      def encode(value double) int {
+        if value.isNaN {
+          return 0x7fc00000 # NaN in IEEE 754
+        } else if !value.isFinite {
+          return value > 0 ? 0x7f800000 : 0xff800000 # Positive or negative infinity
+        }
+        var sign = value < 0 ? 1 : 0
+        var exponent = 0
+        var mantissa = 0.0
+        if value != 0 {
+          var abs = Math.abs(value)
+          exponent = dynamic.Math.log2(abs) as int
+          mantissa = abs / 2.0 ** exponent - 1
+          exponent += 127
+        }
+        return (sign << 31) | ((exponent & 0xFF) << 23) | ((mantissa * 0x7FFFFF) as int)
+      }
+
+      def decode(value int) double {
+        var sign = value >>> 31
+        var exponent = ((value >>> 23) & 0xFF) as double
+        var mantissa = (value & 0x7FFFFF) as double
+        if exponent == 0xFF {
+          if mantissa == 0 {
+            return sign == 0 ? Math.INFINITY : -Math.INFINITY
+          }
+          return Math.NAN
+        }
+        exponent -= 127
+        return (1.0 + mantissa / 0x7FFFFF) * 2 ** exponent * (1 - 2 * sign)
+      }
+    }
+
+    namespace Bool {
+      def encode(value bool) int {
+        return value ? 1 : 0
+      }
+
+      def decode(value int) bool {
+        return value != 0
+      }
+    }
+  }
+}

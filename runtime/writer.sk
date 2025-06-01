@@ -1,0 +1,65 @@
+namespace proto {
+  class Writer : List<int> {
+    def write(value int) {
+      (self as List<int>).append(value)
+    }
+    def write(value List<int>) {
+      (self as List<int>).append(value)
+    }
+
+    # https://protobuf.dev/programming-guides/encoding/#varints
+    def writeVarInt(value int) {
+      if value == 0 {
+        write(0)
+      }
+      var remainder = value < 0 ? 0xffffffff : 0
+      while value != 0 || remainder != 0 {
+        var byte = value & 0x7F
+        # lester.debug("writeVarInt: value: \(value), byte: \(byte)")
+        value = (value >>> 7) | (remainder & 0x7F) << 25
+        remainder >>>= 7
+        if value != 0 {
+          byte |= 0x80
+        }
+        write(byte)
+      }
+    }
+
+    def writeVarInt(fieldNumber int, value int) {
+      writeTag(TagLengthValue.new(.VARINT, fieldNumber))
+      writeVarInt(value)
+    }
+
+    def writeInt32(fieldNumber int, value int) {
+      writeTag(TagLengthValue.new(.I32, fieldNumber))
+      write(value & 0xFF)
+      write((value >> 8) & 0xFF)
+      write((value >> 16) & 0xFF)
+      write((value >> 24) & 0xFF)
+    }
+
+    def writeTag(tag TagLengthValue) {
+      writeVarInt(tag.toInt)
+    }
+
+    def writeString(fieldNumber int, value string) {
+      writeBytes(fieldNumber, encoding.utf8.encode(value.codePoints))
+    }
+
+    def writeBytes(fieldNumber int, value List<int>) {
+      writeTag(TagLengthValue.new(.LEN, fieldNumber))
+      writeVarInt(value.count)
+      write(value)
+    }
+
+    def buffer List<int> {
+      return self
+    }
+  }
+
+  namespace Writer {
+    def new Writer {
+      return List<int>.new as Writer
+    }
+  }
+}

@@ -1,0 +1,63 @@
+namespace tests {
+  var writer = lester.describe("writer", (t) => {
+    t.describe("raw varint", (suite) => {
+      suite.it("should encode 0", (t) => {
+        var writer = proto.Writer.new
+        writer.writeVarInt(0)
+        t.equalList<int>(writer.buffer, [0])
+      })
+
+      suite.it("should encode simple int", (t) => {
+        var writer = proto.Writer.new
+        writer.writeVarInt(150)
+        t.equalList<int>(writer.buffer, [0x96, 0x01])
+      })
+
+      suite.it("should encode large int", (t) => {
+        var writer = proto.Writer.new
+        writer.writeVarInt(3000000)
+        t.equalList<int>(writer.buffer, [0xC0, 0x8D, 0xB7, 0x01])
+      })
+
+      suite.it("should encode negative int", (t) => {
+        var writer = proto.Writer.new
+        writer.writeVarInt(-1)
+        t.equalList<int>(writer.buffer, [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x01])
+      })
+
+      suite.it("should encode -150", (t) => {
+        var writer = proto.Writer.new
+        writer.writeVarInt(-150)
+        t.equalList<int>(writer.buffer, [0xEA, 0xFE, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x01])
+      })
+    })
+
+    t.describe("varint", (suite) => {
+      suite.it("should encode simple int", (t) => {
+        var writer = proto.Writer.new
+        writer.writeVarInt(1, 150)
+        t.equalList<int>(writer.buffer, [0x08, 0x96, 0x01])
+      })
+    })
+
+    t.describe("string", (suite) => {
+      suite.it("should encode simple string", (t) => {
+        var writer = proto.Writer.new
+        writer.writeString(1, "Hello")
+        t.equalList<int>(writer.buffer, [0x0A, 0x05, 0x48, 0x65, 0x6C, 0x6C, 0x6F])
+      })
+
+      suite.it("should encode empty string", (t) => {
+        var writer = proto.Writer.new
+        writer.writeString(1, "")
+        t.equalList<int>(writer.buffer, [0x0A, 0x00])
+      })
+
+      suite.it("should encode string with special characters", (t) => {
+        var writer = proto.Writer.new
+        writer.writeString(1, "Hello, 世界")
+        t.equalList<int>(writer.buffer, [0x0A, 0x0D, 0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x2C, 0x20, 0xE4, 0xB8, 0x96, 0xE7, 0x95, 0x8C])
+      })
+    })
+  })
+}

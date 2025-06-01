@@ -1,0 +1,90 @@
+namespace proto {
+  class Reader {
+    var buffer List<int>
+    var position = 0
+
+    def done bool {
+      return position >= buffer.count
+    }
+
+    def peek int {
+      return buffer[position]
+    }
+
+    def read int {
+      return buffer[position++]
+    }
+
+    def skip(n int) {
+      position += n
+    }
+
+    def readVarInt int {
+      var value = 0
+      var shift = 0
+      while !done && shift < 35 {
+        var byte = read
+        # lester.debug("readVarInt: \(byte) at position \(position - 1) of \(buffer.count) with value \(value) and shift \(shift)")
+        value |= (byte & 0x7F) << shift
+        if (byte & 0x80) == 0 {
+          return value
+        }
+        shift += 7
+      }
+      return value
+    }
+
+    def readTag TagLengthValue {
+      return TagLengthValue.fromInt(readVarInt)
+    }
+
+    def readInt32 int {
+      if position + 4 > buffer.count {
+        throw ErrorCode.EOF
+      }
+      var value = buffer[position] |
+                  (buffer[position + 1] << 8) |
+                  (buffer[position + 2] << 16) |
+                  (buffer[position + 3] << 24)
+      position += 4
+      return value
+    }
+
+    def readString string {
+      return string.fromCodePoints(encoding.utf8.decode(readBytes))
+    }
+
+    def readBytes List<int> {
+      var length = readVarInt
+      var end = position + length
+      if end < 0 || end > buffer.count {
+        throw ErrorCode.EOF
+      }
+      var bytes = buffer.slice(position, end)
+      position += length
+      return bytes
+    }
+
+    def readRaw(tag TagLengthValue, start int) List<int> {
+      switch tag.tag {
+        case .VARINT {
+          readVarInt
+        }
+        case .LEN {
+          var length = readVarInt
+          skip(length)
+        }
+        case .I32 {
+          skip(4)
+        }
+        case .I64 {
+          skip(8)
+        }
+        case .SGROUP, .EGROUP {
+          throw ErrorCode.WRONG_TAG
+        }
+      }
+      return buffer.slice(start, position)
+    }
+  }
+}
