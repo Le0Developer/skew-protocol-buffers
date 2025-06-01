@@ -227,7 +227,7 @@ namespace tutorial {
 		}
 
 		# oneofs accessors
-		def WhichAvatar Person.Avatar {
+		def whichAvatar Person.Avatar {
 			return _oneof_0
 		}
 

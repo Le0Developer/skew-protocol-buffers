@@ -101,7 +101,7 @@ func (g *Gen) generateMessageType(namespace string, messageType *descriptorpb.De
 
 	g.W.WriteLine("# oneofs accessors")
 	for _, oneof := range oneOfs {
-		g.W.WriteLinef("def Which%s %s.%s {", oneof.Name, name, oneof.Name)
+		g.W.WriteLinef("def which%s %s.%s {", oneof.Name, name, oneof.Name)
 		g.W.WriteLinef("return _oneof_%d", oneof.Index)
 		g.W.WriteLine("}")
 	}
