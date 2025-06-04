@@ -195,12 +195,19 @@ func (g *Gen) generateMessageFieldAccessor(field fieldInfo) {
 	if field.Field.Options.GetDeprecated() {
 		g.W.WriteLine("@deprecated")
 	}
-	g.W.WriteLinef("def %s %s {", field.Name(), field.WrappedSkewType())
-	g.W.WriteLinef("return %s", field.PrivateName())
-	g.W.WriteLine("}")
-	g.W.WriteLine("")
+	if field.HasDefault {
+		g.W.WriteLinef("def %s %s {", field.Name(), field.CollectionType())
+		g.W.WriteLinef("return %s.unwrapOr(%s)", field.PrivateName(), field.DefaultValue())
+		g.W.WriteLine("}")
+		g.W.WriteLine("")
+	} else {
+		g.W.WriteLinef("def %s %s {", field.Name(), field.WrappedSkewType())
+		g.W.WriteLinef("return %s", field.PrivateName())
+		g.W.WriteLine("}")
+		g.W.WriteLine("")
+	}
 
-	if !field.Repeated && !field.HasDefault {
+	if !field.Repeated {
 		g.W.WriteLine("@prefer")
 		if field.Field.Options.GetDeprecated() {
 			g.W.WriteLine("@deprecated")
@@ -218,13 +225,18 @@ func (g *Gen) generateMessageFieldAccessor(field fieldInfo) {
 	g.W.WriteLinef("%s = value", field.PrivateName())
 	g.W.WriteLine("}")
 	g.W.WriteLine("")
+
+	if field.Field.Options.GetDeprecated() {
+		g.W.WriteLine("@deprecated")
+	}
+	g.W.WriteLinef("def has%s bool {", title(field.Name()))
+	g.W.WriteLinef("return %s.isSome", field.PrivateName())
+	g.W.WriteLine("}")
+	g.W.WriteLine("")
 }
 
 func (g *Gen) generateMessageFieldMarshaller(field fieldInfo) {
-	val := field.PrivateName()
-	if !field.HasDefault {
-		val = fmt.Sprintf("%s.unwrapUnchecked", val)
-	}
+	val := fmt.Sprintf("%s.unwrapUnchecked", field.PrivateName())
 
 	if field.Repeated {
 		g.W.WriteLinef("if %s.count > 0 {", field.PrivateName())
@@ -235,7 +247,7 @@ func (g *Gen) generateMessageFieldMarshaller(field fieldInfo) {
 			g.W.WriteLinef("for item in %s {", field.PrivateName())
 			val = "item"
 		}
-	} else if !field.HasDefault {
+	} else {
 		g.W.WriteLinef("if %s.isSome {", field.PrivateName())
 	}
 	if field.TypeInfo.Enum {
@@ -257,9 +269,7 @@ func (g *Gen) generateMessageFieldMarshaller(field fieldInfo) {
 		}
 		g.W.WriteLine("}")
 	}
-	if !field.HasDefault {
-		g.W.WriteLine("}")
-	}
+	g.W.WriteLine("}")
 }
 
 func (g *Gen) generateMessageFieldUnmarshaller(field fieldInfo, name string, oneOfs []*oneOfInfo) {
@@ -283,9 +293,7 @@ func (g *Gen) generateMessageFieldUnmarshaller(field fieldInfo, name string, one
 		}
 	} else {
 		g.W.WriteLinef("assert(tag.tag == .%s)", field.TypeInfo.WireType())
-		if !field.HasDefault {
-			value = fmt.Sprintf("some<%s>(%s)", field.CollectionType(), value)
-		}
+		value = fmt.Sprintf("some<%s>(%s)", field.CollectionType(), value)
 		g.W.WriteLinef("message.%s = %s", field.PrivateName(), value)
 	}
 
@@ -324,7 +332,7 @@ func (f fieldInfo) CollectionType() string {
 }
 
 func (f fieldInfo) WrappedSkewType() string {
-	if f.Repeated || f.HasDefault {
+	if f.Repeated {
 		return f.CollectionType()
 	}
 	return "Option<" + f.CollectionType() + ">"
@@ -334,17 +342,18 @@ func (f fieldInfo) Initializer() string {
 	if f.Repeated {
 		return f.CollectionType() + ".new"
 	}
-	if f.HasDefault {
-		defaultValue := f.Field.GetDefaultValue()
-		if f.TypeInfo.SkewType == "string" {
-			return strconv.Quote(defaultValue)
-		} else if f.TypeInfo.Enum {
-			return fmt.Sprintf("%s.%s", f.SkewType, defaultValue)
-		}
-
-		return defaultValue
-	}
 	return "none<" + f.CollectionType() + ">()"
+}
+
+func (f fieldInfo) DefaultValue() string {
+	defaultValue := f.Field.GetDefaultValue()
+	if f.TypeInfo.SkewType == "string" {
+		return strconv.Quote(defaultValue)
+	} else if f.TypeInfo.Enum {
+		return fmt.Sprintf("%s.%s", f.SkewType, defaultValue)
+	}
+
+	return defaultValue
 }
 
 func (f fieldInfo) Serialize() string {

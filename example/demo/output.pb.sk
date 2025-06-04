@@ -5,13 +5,30 @@ namespace google.protobuf {
 	# google.protobuf.Timestamp
 	class Timestamp {
 		# field definitions
-		var __seconds = none<int>()
 		var __nanos = none<int>()
+		var __seconds = none<int>()
 
 
 		var _unknownFields = List<int>.new
 
 		# field accessors
+		def nanos Option<int> {
+			return __nanos
+		}
+
+		@prefer
+		def nanos=(value int) {
+			__nanos = some<int>(value)
+		}
+
+		def nanos=(value Option<int>) {
+			__nanos = value
+		}
+
+		def hasNanos bool {
+			return __nanos.isSome
+		}
+
 		def seconds Option<int> {
 			return __seconds
 		}
@@ -25,17 +42,8 @@ namespace google.protobuf {
 			__seconds = value
 		}
 
-		def nanos Option<int> {
-			return __nanos
-		}
-
-		@prefer
-		def nanos=(value int) {
-			__nanos = some<int>(value)
-		}
-
-		def nanos=(value Option<int>) {
-			__nanos = value
+		def hasSeconds bool {
+			return __seconds.isSome
 		}
 
 		# oneofs accessors
@@ -61,13 +69,13 @@ namespace google.protobuf {
 				var start = reader.position
 				var tag = reader.readTag
 				switch tag.fieldNumber {
-					case 2 {
-						assert(tag.tag == .VARINT)
-						message.__nanos = some<int>(reader.readVarInt)
-					}
 					case 1 {
 						assert(tag.tag == .VARINT)
 						message.__seconds = some<int>(reader.readVarInt)
+					}
+					case 2 {
+						assert(tag.tag == .VARINT)
+						message.__nanos = some<int>(reader.readVarInt)
 					}
 					default {
 						message._unknownFields.append(reader.readRaw(tag, start))
@@ -104,13 +112,13 @@ namespace tutorial {
 	# tutorial.Person
 	class Person {
 		# field definitions
-		var __id = none<int>()
-		var __lastUpdated = none<google.protobuf.Timestamp>()
-		var __name = none<string>()
-		var __scores = List<int>.new
-		var __email = none<string>()
 		var __imageUrl = none<string>()
+		var __email = none<string>()
+		var __name = none<string>()
+		var __id = none<int>()
 		var __imageData = none<List<int>>()
+		var __lastUpdated = none<google.protobuf.Timestamp>()
+		var __scores = List<int>.new
 		var __age = none<double>()
 		var __phones = List<tutorial.Person.PhoneNumber>.new
 
@@ -119,51 +127,21 @@ namespace tutorial {
 		var _unknownFields = List<int>.new
 
 		# field accessors
-		def id Option<int> {
-			return __id
+		def imageUrl Option<string> {
+			return __imageUrl
 		}
 
 		@prefer
-		def id=(value int) {
-			__id = some<int>(value)
+		def imageUrl=(value string) {
+			__imageUrl = some<string>(value)
 		}
 
-		def id=(value Option<int>) {
-			__id = value
+		def imageUrl=(value Option<string>) {
+			__imageUrl = value
 		}
 
-		def lastUpdated Option<google.protobuf.Timestamp> {
-			return __lastUpdated
-		}
-
-		@prefer
-		def lastUpdated=(value google.protobuf.Timestamp) {
-			__lastUpdated = some<google.protobuf.Timestamp>(value)
-		}
-
-		def lastUpdated=(value Option<google.protobuf.Timestamp>) {
-			__lastUpdated = value
-		}
-
-		def name Option<string> {
-			return __name
-		}
-
-		@prefer
-		def name=(value string) {
-			__name = some<string>(value)
-		}
-
-		def name=(value Option<string>) {
-			__name = value
-		}
-
-		def scores List<int> {
-			return __scores
-		}
-
-		def scores=(value List<int>) {
-			__scores = value
+		def hasImageUrl bool {
+			return __imageUrl.isSome
 		}
 
 		def email Option<string> {
@@ -179,17 +157,42 @@ namespace tutorial {
 			__email = value
 		}
 
-		def imageUrl Option<string> {
-			return __imageUrl
+		def hasEmail bool {
+			return __email.isSome
+		}
+
+		def name Option<string> {
+			return __name
 		}
 
 		@prefer
-		def imageUrl=(value string) {
-			__imageUrl = some<string>(value)
+		def name=(value string) {
+			__name = some<string>(value)
 		}
 
-		def imageUrl=(value Option<string>) {
-			__imageUrl = value
+		def name=(value Option<string>) {
+			__name = value
+		}
+
+		def hasName bool {
+			return __name.isSome
+		}
+
+		def id Option<int> {
+			return __id
+		}
+
+		@prefer
+		def id=(value int) {
+			__id = some<int>(value)
+		}
+
+		def id=(value Option<int>) {
+			__id = value
+		}
+
+		def hasId bool {
+			return __id.isSome
 		}
 
 		def imageData Option<List<int>> {
@@ -205,6 +208,39 @@ namespace tutorial {
 			__imageData = value
 		}
 
+		def hasImageData bool {
+			return __imageData.isSome
+		}
+
+		def lastUpdated Option<google.protobuf.Timestamp> {
+			return __lastUpdated
+		}
+
+		@prefer
+		def lastUpdated=(value google.protobuf.Timestamp) {
+			__lastUpdated = some<google.protobuf.Timestamp>(value)
+		}
+
+		def lastUpdated=(value Option<google.protobuf.Timestamp>) {
+			__lastUpdated = value
+		}
+
+		def hasLastUpdated bool {
+			return __lastUpdated.isSome
+		}
+
+		def scores List<int> {
+			return __scores
+		}
+
+		def scores=(value List<int>) {
+			__scores = value
+		}
+
+		def hasScores bool {
+			return __scores.isSome
+		}
+
 		def age Option<double> {
 			return __age
 		}
@@ -218,12 +254,20 @@ namespace tutorial {
 			__age = value
 		}
 
+		def hasAge bool {
+			return __age.isSome
+		}
+
 		def phones List<tutorial.Person.PhoneNumber> {
 			return __phones
 		}
 
 		def phones=(value List<tutorial.Person.PhoneNumber>) {
 			__phones = value
+		}
+
+		def hasPhones bool {
+			return __phones.isSome
 		}
 
 		# oneofs accessors
@@ -234,16 +278,19 @@ namespace tutorial {
 		# marshal
 		def marshal List<int> {
 			var writer = proto.Writer.new
-			if __imageUrl.isSome {
-				writer.writeString(7, __imageUrl.unwrapUnchecked)
-			}
-			if __id.isSome {
-				writer.writeVarInt(2, __id.unwrapUnchecked)
-			}
 			if __phones.count > 0 {
 				for item in __phones {
 					writer.writeBytes(4, item.marshal)
 				}
+			}
+			if __name.isSome {
+				writer.writeString(1, __name.unwrapUnchecked)
+			}
+			if __imageUrl.isSome {
+				writer.writeString(7, __imageUrl.unwrapUnchecked)
+			}
+			if __email.isSome {
+				writer.writeString(3, __email.unwrapUnchecked)
 			}
 			if __scores.count > 0 {
 				if __scores.count == 1 {
@@ -256,20 +303,17 @@ namespace tutorial {
 					writer.writeBytes(6, buffer.buffer)
 				}
 			}
+			if __imageData.isSome {
+				writer.writeBytes(8, __imageData.unwrapUnchecked)
+			}
+			if __id.isSome {
+				writer.writeVarInt(2, __id.unwrapUnchecked)
+			}
 			if __lastUpdated.isSome {
 				writer.writeBytes(5, __lastUpdated.unwrapUnchecked.marshal)
 			}
 			if __age.isSome {
 				writer.writeInt32(9, proto.internal_encoding.Float.encode(__age.unwrapUnchecked))
-			}
-			if __imageData.isSome {
-				writer.writeBytes(8, __imageData.unwrapUnchecked)
-			}
-			if __name.isSome {
-				writer.writeString(1, __name.unwrapUnchecked)
-			}
-			if __email.isSome {
-				writer.writeString(3, __email.unwrapUnchecked)
 			}
 			writer.write(_unknownFields)
 			return writer.buffer
@@ -283,35 +327,6 @@ namespace tutorial {
 				var start = reader.position
 				var tag = reader.readTag
 				switch tag.fieldNumber {
-					case 7 {
-						assert(tag.tag == .LEN)
-						message.__imageUrl = some<string>(reader.readString)
-						message._oneof_0 = Person.Avatar.ImageUrl
-					}
-					case 9 {
-						assert(tag.tag == .I32)
-						message.__age = some<double>(proto.internal_encoding.Float.decode(reader.readInt32))
-					}
-					case 3 {
-						assert(tag.tag == .LEN)
-						message.__email = some<string>(reader.readString)
-					}
-					case 5 {
-						assert(tag.tag == .LEN)
-						message.__lastUpdated = some<google.protobuf.Timestamp>(google.protobuf.Timestamp.unmarshal(reader.readBytes))
-					}
-					case 2 {
-						assert(tag.tag == .VARINT)
-						message.__id = some<int>(reader.readVarInt)
-					}
-					case 1 {
-						assert(tag.tag == .LEN)
-						message.__name = some<string>(reader.readString)
-					}
-					case 4 {
-						assert(tag.tag == .LEN)
-						message.__phones.append(tutorial.Person.PhoneNumber.unmarshal(reader.readBytes))
-					}
 					case 6 {
 						if tag.tag == .LEN {
 							var buffer = proto.Reader.new(reader.readBytes)
@@ -322,6 +337,35 @@ namespace tutorial {
 							assert(tag.tag == .VARINT)
 							message.__scores.append(proto.internal_encoding.ZigZag.decode(reader.readVarInt))
 						}
+					}
+					case 4 {
+						assert(tag.tag == .LEN)
+						message.__phones.append(tutorial.Person.PhoneNumber.unmarshal(reader.readBytes))
+					}
+					case 3 {
+						assert(tag.tag == .LEN)
+						message.__email = some<string>(reader.readString)
+					}
+					case 1 {
+						assert(tag.tag == .LEN)
+						message.__name = some<string>(reader.readString)
+					}
+					case 5 {
+						assert(tag.tag == .LEN)
+						message.__lastUpdated = some<google.protobuf.Timestamp>(google.protobuf.Timestamp.unmarshal(reader.readBytes))
+					}
+					case 7 {
+						assert(tag.tag == .LEN)
+						message.__imageUrl = some<string>(reader.readString)
+						message._oneof_0 = Person.Avatar.ImageUrl
+					}
+					case 2 {
+						assert(tag.tag == .VARINT)
+						message.__id = some<int>(reader.readVarInt)
+					}
+					case 9 {
+						assert(tag.tag == .I32)
+						message.__age = some<double>(proto.internal_encoding.Float.decode(reader.readInt32))
 					}
 					case 8 {
 						assert(tag.tag == .LEN)
@@ -344,27 +388,45 @@ namespace tutorial {
 		# tutorial.Person.PhoneNumber
 		class PhoneNumber {
 			# field definitions
-			var __number = "+1234567890"
-			var __type = tutorial.Person.PhoneType.WORK
+			var __type = none<tutorial.Person.PhoneType>()
+			var __number = none<string>()
 
 
 			var _unknownFields = List<int>.new
 
 			# field accessors
-			def number string {
-				return __number
+			def type tutorial.Person.PhoneType {
+				return __type.unwrapOr(tutorial.Person.PhoneType.WORK)
 			}
 
+			@prefer
+			def type=(value tutorial.Person.PhoneType) {
+				__type = some<tutorial.Person.PhoneType>(value)
+			}
+
+			def type=(value Option<tutorial.Person.PhoneType>) {
+				__type = value
+			}
+
+			def hasType bool {
+				return __type.isSome
+			}
+
+			def number string {
+				return __number.unwrapOr("+1234567890")
+			}
+
+			@prefer
 			def number=(value string) {
+				__number = some<string>(value)
+			}
+
+			def number=(value Option<string>) {
 				__number = value
 			}
 
-			def type tutorial.Person.PhoneType {
-				return __type
-			}
-
-			def type=(value tutorial.Person.PhoneType) {
-				__type = value
+			def hasNumber bool {
+				return __number.isSome
 			}
 
 			# oneofs accessors
@@ -372,8 +434,12 @@ namespace tutorial {
 			# marshal
 			def marshal List<int> {
 				var writer = proto.Writer.new
-				writer.writeVarInt(2, __type)
-				writer.writeString(1, __number)
+				if __type.isSome {
+					writer.writeVarInt(2, __type.unwrapUnchecked)
+				}
+				if __number.isSome {
+					writer.writeString(1, __number.unwrapUnchecked)
+				}
 				writer.write(_unknownFields)
 				return writer.buffer
 			}
@@ -388,11 +454,11 @@ namespace tutorial {
 					switch tag.fieldNumber {
 						case 2 {
 							assert(tag.tag == .VARINT)
-							message.__type = reader.readVarInt as tutorial.Person.PhoneType
+							message.__type = some<tutorial.Person.PhoneType>(reader.readVarInt as tutorial.Person.PhoneType)
 						}
 						case 1 {
 							assert(tag.tag == .LEN)
-							message.__number = reader.readString
+							message.__number = some<string>(reader.readString)
 						}
 						default {
 							message._unknownFields.append(reader.readRaw(tag, start))
@@ -445,6 +511,10 @@ namespace tutorial {
 
 		def people=(value List<tutorial.Person>) {
 			__people = value
+		}
+
+		def hasPeople bool {
+			return __people.isSome
 		}
 
 		# oneofs accessors
