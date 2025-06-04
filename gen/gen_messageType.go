@@ -226,13 +226,15 @@ func (g *Gen) generateMessageFieldAccessor(field fieldInfo) {
 	g.W.WriteLine("}")
 	g.W.WriteLine("")
 
-	if field.Field.Options.GetDeprecated() {
-		g.W.WriteLine("@deprecated")
+	if !field.Repeated {
+		if field.Field.Options.GetDeprecated() {
+			g.W.WriteLine("@deprecated")
+		}
+		g.W.WriteLinef("def has%s bool {", title(field.Name()))
+		g.W.WriteLinef("return %s.isSome", field.PrivateName())
+		g.W.WriteLine("}")
+		g.W.WriteLine("")
 	}
-	g.W.WriteLinef("def has%s bool {", title(field.Name()))
-	g.W.WriteLinef("return %s.isSome", field.PrivateName())
-	g.W.WriteLine("}")
-	g.W.WriteLine("")
 }
 
 func (g *Gen) generateMessageFieldMarshaller(field fieldInfo) {
