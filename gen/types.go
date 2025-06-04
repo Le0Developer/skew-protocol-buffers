@@ -13,7 +13,7 @@ var (
 		descriptorpb.FieldDescriptorProto_TYPE_INT32:   {SkewType: "int"},
 		descriptorpb.FieldDescriptorProto_TYPE_FIXED64: {SkewType: "int", Fixed: 8},
 		descriptorpb.FieldDescriptorProto_TYPE_FIXED32: {SkewType: "int", Fixed: 4},
-		descriptorpb.FieldDescriptorProto_TYPE_BOOL:    {SkewType: "bool", Encoder: "bool"},
+		descriptorpb.FieldDescriptorProto_TYPE_BOOL:    {SkewType: "bool", Encoder: "Bool"},
 		descriptorpb.FieldDescriptorProto_TYPE_STRING:  {SkewType: "string", Bytes: true},
 		// no GROUP support
 		descriptorpb.FieldDescriptorProto_TYPE_MESSAGE:  {Message: true, Bytes: true},
