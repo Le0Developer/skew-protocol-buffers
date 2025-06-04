@@ -41,3 +41,5 @@ ensure-skewc:
 test-run:
 	node tests/test.js
 
+install:
+	GOPRIVATE=github.com/le0developer go install github.com/le0developer/skew-protocol-buffers/cmd/protoc-gen-skew@latest
