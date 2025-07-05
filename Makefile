@@ -1,3 +1,4 @@
+.PHONY: build demo run-demo run-demo-release test test-debug test-compile test-compile-debug test-compile-release test-run install ensure-skewc
 
 build:
 	mkdir -p dist

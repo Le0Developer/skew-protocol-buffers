@@ -6,6 +6,7 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
+// https://protobuf.dev/reference/cpp/api-docs/google.protobuf.descriptor.pb/
 func (g *Gen) generateFile(descriptor *descriptorpb.FileDescriptorProto) error {
 	name := descriptor.GetName()
 	if name == "" {
@@ -35,6 +36,14 @@ func (g *Gen) generateFile(descriptor *descriptorpb.FileDescriptorProto) error {
 	for _, enumType := range descriptor.EnumType {
 		if err := g.generateEnumType(enumType); err != nil {
 			return fmt.Errorf("error generating enum type %s: %w", enumType.GetName(), err)
+		}
+	}
+
+	g.W.WriteLine("")
+	g.W.WriteLine("# services")
+	for _, service := range descriptor.Service {
+		if err := g.generateService(service); err != nil {
+			return fmt.Errorf("error generating service %s: %w", service.GetName(), err)
 		}
 	}
 

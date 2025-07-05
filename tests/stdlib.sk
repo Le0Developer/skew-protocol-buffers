@@ -1,6 +1,14 @@
 # Select parts of https://github.com/Le0Developer/skew-vendor required to run
 # protobuf
 
+# cat stdlib/*.sk encoding/utf8.sk
+
+namespace Exceptions {
+  const UNWRAP_OPTION_NONE = Symbol.new("UNWRAP_OPTION_NONE")
+  const UNWRAP_RESULT_ERROR = Symbol.new("UNWRAP_RESULT_ERROR")
+  const UNWRAP_RESULT_OK = Symbol.new("UNWRAP_RESULT_OK")
+  const UNREACHABLE = Symbol.new("UNREACHABLE")
+}
 type Option<T> : T {
   def isNone bool {
     return (self as dynamic) == null
@@ -18,7 +26,7 @@ type Option<T> : T {
   }
 
   def unwrap T {
-    return expect(StandardExceptionCode.UNWRAP_OPTION_NONE)
+    return expect(Exceptions.UNWRAP_OPTION_NONE)
   }
 
   def unwrapOr(fallback T) T {
@@ -27,6 +35,18 @@ type Option<T> : T {
 
   def unwrapOr(transform fn() T) T {
     return unwrapUnchecked ?? transform()
+  }
+
+  def okOr Result<T, Symbol> {
+    return isNone ? err<T, Symbol>(Exceptions.UNWRAP_OPTION_NONE) : ok<T, Symbol>(unwrapUnchecked)
+  }
+
+  def okOr<E>(error E) Result<T, E> {
+    return isNone ? err<T, E>(error) : ok<T, E>(unwrapUnchecked)
+  }
+
+  def okOr<E>(fallback fn() E) Result<T, E> {
+    return isNone ? err<T, E>(fallback()) : ok<T, E>(unwrapUnchecked)
   }
 
   def filter(callback fn(T) bool) Option<T> {
@@ -65,22 +85,141 @@ def some<T>(value T) Option<T> {
 def none<T> Option<T> {
   return null as dynamic
 }
-
 def panic(message dynamic) dynamic {
   throw message
 }
 
 def unreachable dynamic {
-  return panic(StandardExceptionCode.UNREACHABLE)
+  return panic(Exceptions.UNREACHABLE)
+}
+def print(arg1 dynamic) {
+  dynamic.console.log(arg1)
+}
+def print(arg1 dynamic, arg2 dynamic) {
+  dynamic.console.log(arg1, arg2)
+}
+def print(arg1 dynamic, arg2 dynamic, arg3 dynamic) {
+  dynamic.console.log(arg1, arg2, arg3)
+}
+def print(arg1 dynamic, arg2 dynamic, arg3 dynamic, arg4 dynamic) {
+  dynamic.console.log(arg1, arg2, arg3, arg4)
+}
+def print(arg1 dynamic, arg2 dynamic, arg3 dynamic, arg4 dynamic, arg5 dynamic) {
+  dynamic.console.log(arg1, arg2, arg3, arg4, arg5)
+}
+def print(arg1 dynamic, arg2 dynamic, arg3 dynamic, arg4 dynamic, arg5 dynamic, arg6 dynamic) {
+  dynamic.console.log(arg1, arg2, arg3, arg4, arg5, arg6)
+}
+class Result<V, E> {
+  var _ok Option<V>
+  var _err Option<E>
+
+  def unwrap V {
+    return _ok.expect(Exceptions.UNWRAP_RESULT_ERROR)
+  }
+
+  def unwrapErr E {
+    return _err.expect(Exceptions.UNWRAP_RESULT_OK)
+  }
+
+  def unwrapOr(fallback V) V {
+    return _ok.unwrapOr(fallback)
+  }
+
+  def unwrapOr(fallback fn() V) V {
+    return _ok.unwrapOr(fallback)
+  }
+
+  def expect(message dynamic) V {
+    return _ok.expect(message)
+  }
+
+  def expectErr(message dynamic) E {
+    return _err.expect(message)
+  }
+
+  def isOk bool {
+    return _ok.isSome
+  }
+
+  def isErr bool {
+    return _err.isSome
+  }
+
+  def ok Option<V> {
+    return _ok
+  }
+
+  def err Option<E> {
+    return _err
+  }
+
+  def map<U>(transform fn(V) U) Result<U, E> {
+    return isOk ? Result<U, E>.new(some<U>(transform(_ok.unwrapUnchecked)), none<E>()) : self as dynamic
+  }
+
+  def mapErr<F>(transform fn(E) F) Result<V, F> {
+    return isErr ? Result<V, F>.new(none<V>(), some<F>(transform(_err.unwrapUnchecked))) : self as dynamic
+  }
+
+  def mapOr<U>(fallback U, transform fn(V) U) U {
+    return isOk ? transform(_ok.unwrapUnchecked) : fallback
+  }
+
+  def mapOrElse<U>(fallback fn() U, transform fn(V) U) U {
+    return isOk ? transform(_ok.unwrapUnchecked) : fallback()
+  }
+
+  def replace<U>(value U) Result<U, E> {
+    return isOk ? Result<U, E>.new(some<U>(value), none<E>()) : self as dynamic
+  }
+
+  def replaceErr<F>(error F) Result<V, F> {
+    return isErr ? Result<V, F>.new(none<V>(), some<F>(error)) : self as dynamic
+  }
+
+  def iter List<V> {
+    return isOk ? [_ok.unwrapUnchecked] : []
+  }
+
+  def toString string {
+    return RELEASE ? (self as dynamic).toString() : isOk ? "Ok(\(_ok.unwrapUnchecked as dynamic))" : "Err(\(_err.unwrapUnchecked as dynamic))"
+  }
 }
 
-enum StandardExceptionCode {
-  UNWRAP_OPTION_NONE
-  UNWRAP_RESULT_ERROR
-  UNWRAP_RESULT_OK
-  UNREACHABLE
+def ok<V, E>(value V) Result<V, E> {
+  return Result<V, E>.new(some<V>(value), none<E>())
 }
 
+def err<V, E>(error E) Result<V, E> {
+  return Result<V, E>.new(none<V>(), some<E>(error))
+}
+type StringBuilder2 : List<string> {
+  def append(s string) {
+    (self as dynamic).push(s)
+  }
+
+  def toString string {
+    return "".join(self as List<string>)
+  }
+}
+
+namespace StringBuilder2 {
+  def new StringBuilder2 {
+    return List<string>.new as StringBuilder2
+  }
+}
+type Symbol : dynamic {}
+
+namespace Symbol {
+  def new(name string) Symbol {
+    if RELEASE {
+      return List<int>.new as Symbol
+    } else {
+      return name as Symbol
+    }
+  }
+}
 namespace encoding.utf8 {
   # utf32 code points to utf8 bytes
   def encode(codePoints List<int>) List<int> {

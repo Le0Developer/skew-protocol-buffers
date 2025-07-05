@@ -13,6 +13,7 @@ type Gen struct {
 }
 
 // Generate processes the CodeGeneratorRequest and produces a CodeGeneratorResponse.
+// https://protobuf.dev/reference/cpp/api-docs/google.protobuf.compiler.plugin.pb/
 func (g *Gen) Generate(req *pluginpb.CodeGeneratorRequest) (*pluginpb.CodeGeneratorResponse, error) {
 	// This is a stub; customize file generation here.
 	resp := &pluginpb.CodeGeneratorResponse{}

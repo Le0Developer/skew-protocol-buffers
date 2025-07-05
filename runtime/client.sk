@@ -1,0 +1,7 @@
+namespace proto.rpc {
+  interface Client {
+    def call(serviceName string, content List<int>) future.Future<Result<List<int>, dynamic>>
+  }
+
+  const METHOD_NOT_FOUND = Symbol.new("proto.rpc.Client.METHOD_NOT_FOUND")
+}
