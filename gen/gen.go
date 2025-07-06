@@ -9,7 +9,8 @@ import (
 )
 
 type Gen struct {
-	W *CodeWriter
+	W          *CodeWriter
+	namespaces []string
 }
 
 // Generate processes the CodeGeneratorRequest and produces a CodeGeneratorResponse.

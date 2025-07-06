@@ -23,6 +23,7 @@ func (g *Gen) generateFile(descriptor *descriptorpb.FileDescriptorProto) error {
 		g.W.WriteLine("@deprecated")
 	}
 	g.W.WriteLinef("namespace %s {", packageName)
+	g.namespaces = append(g.namespaces, packageName)
 
 	g.W.WriteLine("# message types")
 	for _, messageType := range descriptor.MessageType {
@@ -48,6 +49,7 @@ func (g *Gen) generateFile(descriptor *descriptorpb.FileDescriptorProto) error {
 	}
 
 	g.W.WriteLine("}")
+	g.namespaces = g.namespaces[:len(g.namespaces)-1]
 
 	return nil
 }
