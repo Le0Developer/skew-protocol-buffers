@@ -37,3 +37,18 @@ To use the `protoc-gen-skew` plugin, you need to generate Skew code from your `.
 ```bash
 protoc --skew_out=. your_proto_file.proto
 ```
+
+## Options
+
+You can pass options to the `protoc` compiler which will modify the generated code.
+A full list of options and their descriptions can be found in the [gen/options.go](gen/options.go) file.
+
+The options are passed when invoking the `protoc` command in the `--skew_out` flag before the output directory separated by a colon `:`:
+
+```bash
+protoc --skew_out="!PreserveUnknownFields:." your_proto_file.proto
+```
+
+Multiple options can be passed by separating them with a comma `,`.
+
+A preceding `!` will disable the option, otherwise it will be enabled by default.

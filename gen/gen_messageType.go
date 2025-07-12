@@ -90,8 +90,10 @@ func (g *Gen) generateMessageType(namespace string, messageType *descriptorpb.De
 	for _, oneof := range oneOfs {
 		g.W.WriteLinef("var _oneof_%d = %s.%s.None", oneof.Index, name, oneof.Name)
 	}
-	g.W.WriteLine("")
-	g.W.WriteLine("var _unknownFields = List<int>.new")
+	if g.options.PreserveUnknownFields {
+		g.W.WriteLine("")
+		g.W.WriteLine("var _unknownFields = List<int>.new")
+	}
 
 	g.W.WriteLine("")
 	g.W.WriteLine("# field accessors")
@@ -118,7 +120,9 @@ func (g *Gen) generateMessageType(namespace string, messageType *descriptorpb.De
 		g.generateMessageFieldMarshaller(field)
 	}
 
-	g.W.WriteLinef("writer.write(_unknownFields)")
+	if g.options.PreserveUnknownFields {
+		g.W.WriteLinef("writer.write(_unknownFields)")
+	}
 	g.W.WriteLinef("return writer.buffer")
 
 	g.W.WriteLine("}")
@@ -130,7 +134,9 @@ func (g *Gen) generateMessageType(namespace string, messageType *descriptorpb.De
 	g.W.WriteLinef("def unmarshal(reader proto.Reader) %s {", name)
 	g.W.WriteLinef("var message = %s.new", name)
 	g.W.WriteLine("while !reader.done {")
-	g.W.WriteLine("var start = reader.position")
+	if g.options.PreserveUnknownFields {
+		g.W.WriteLine("var start = reader.position")
+	}
 	g.W.WriteLine("var tag = reader.readTag")
 
 	rand.Shuffle(len(fields), func(i, j int) {
@@ -140,9 +146,11 @@ func (g *Gen) generateMessageType(namespace string, messageType *descriptorpb.De
 	for _, field := range fields {
 		g.generateMessageFieldUnmarshaller(field, name, oneOfs)
 	}
-	g.W.WriteLine("default {")
-	g.W.WriteLine("message._unknownFields.append(reader.readRaw(tag, start))")
-	g.W.WriteLine("}")
+	if g.options.PreserveUnknownFields {
+		g.W.WriteLine("default {")
+		g.W.WriteLine("message._unknownFields.append(reader.readRaw(tag, start))")
+		g.W.WriteLine("}")
+	}
 	g.W.WriteLine("}")
 	g.W.WriteLine("}")
 
