@@ -1,13 +1,14 @@
 class Timestamp {
+  @alwaysinline
   def asDate dynamic {
-    var s = self.seconds.unwrapOr(0)
-    var ns = self.nanos.unwrapOr(0)
+    var s = self.seconds.unwrapOr(0) as double
+    var ns = self.nanos.unwrapOr(0) as double
     return dynamic.Date.new(s * 1000 + ns / 1000000)
   }
 
 #  def +(other Duration) Timestamp {
 #    var s = self.seconds.unwrapOr(0) + other.seconds.unwrapOr(0)
-#    var ns = self.nanos.unwrapOr(0) + other.nanos.unwrapOr(0)#
+#    var ns = self.nanos.unwrapOr(0) + other.nanos.unwrapOr(0)
 #    if ns >= 1000000000 {
 #      s += ns / 1000000000
 #      ns = ns % 1000000000
