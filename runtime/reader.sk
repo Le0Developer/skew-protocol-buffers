@@ -3,6 +3,7 @@ namespace proto {
     var buffer List<int>
     var position = 0
 
+    @alwaysinline
     def done bool {
       return position >= buffer.count
     }
