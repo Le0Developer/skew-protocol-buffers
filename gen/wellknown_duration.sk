@@ -1,6 +1,6 @@
 class Duration {
   @alwaysinline
-  def toDuration time.Duration {
+  def asDuration time.Duration {
     var s = self.seconds.unwrapOr(0) as double
     var ns = self.nanos.unwrapOr(0) as double
     return time.Duration.fromMilliseconds(s * 1000 + ns / 1000000)
@@ -12,7 +12,7 @@ namespace Duration {
   def from(value time.Duration) Duration {
     var dur = Duration.new
     dur.seconds = value.seconds
-    dur.nanos = value.milliseconds %% 1000
+    dur.nanos = (value.milliseconds %% 1000) * 1000000
     return dur
   }
 }
