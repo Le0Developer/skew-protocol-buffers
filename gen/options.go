@@ -39,7 +39,7 @@ func defaultOptions() Options {
 }
 
 func (o *Options) parseOptions(opt string) error {
-	fields := map[string]*bool{
+	fields := map[string]any{
 		"PreserveUnknownFields": &o.PreserveUnknownFields,
 		"ShuffleFields":         &o.ShuffleFields,
 		"StripEnumPrefix":       &o.StripEnumPrefix,
@@ -47,17 +47,41 @@ func (o *Options) parseOptions(opt string) error {
 
 	args := strings.Split(opt, ",")
 	for _, arg := range args {
-		newValue := true
-		if strings.HasPrefix(arg, "-") {
-			newValue = false
-			arg = strings.TrimPrefix(arg, "-")
+		args := strings.Split(strings.TrimSpace(arg), "=")
+		if len(args) == 1 {
+			args = append(args, "yes")
+		} else if len(args) != 2 {
+			return fmt.Errorf("invalid option format: %s, expected key=value", arg)
 		}
 
-		if field, ok := fields[arg]; ok {
-			*field = newValue
-		} else {
-			return fmt.Errorf("unknown option: %s", arg)
+		field, ok := fields[args[0]]
+		if !ok {
+			return fmt.Errorf("unknown option: %s", args[0])
+		}
+
+		switch v := field.(type) {
+		case *bool:
+			value, err := o.coerceToBool(args[1])
+			if err != nil {
+				return err
+			}
+			*v = value
+		case *string:
+			*v = args[1]
+		default:
+			panic(fmt.Sprintf("unexpected type for option %s: %T", args[0], v))
 		}
 	}
 	return nil
+}
+
+func (o *Options) coerceToBool(v string) (bool, error) {
+	switch strings.ToLower(v) {
+	case "true", "yes", "1", "y":
+		return true, nil
+	case "false", "no", "0", "n":
+		return false, nil
+	default:
+		return false, fmt.Errorf("invalid boolean value: %s, expected true/false or yes/no", v)
+	}
 }

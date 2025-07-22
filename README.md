@@ -46,7 +46,7 @@ A full list of options and their descriptions can be found in the [gen/options.g
 The options are passed when invoking the `protoc` command in the `--skew_out` flag before the output directory separated by a colon `:`:
 
 ```bash
-protoc --skew_out="!PreserveUnknownFields:." your_proto_file.proto
+protoc --skew_out="PreserveUnknownFields=no:." your_proto_file.proto
 ```
 
 Multiple options can be passed by separating them with a comma `,`.
