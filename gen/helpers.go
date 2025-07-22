@@ -1,6 +1,8 @@
 package gen
 
-import "strings"
+import (
+	"strings"
+)
 
 func title(title string) string {
 	if title == "" {
@@ -18,4 +20,19 @@ func screamingCase(s string) string {
 		result += string(r)
 	}
 	return strings.ToUpper(result)
+}
+
+func isValidSkewIdentifier(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+	if (s[0] < 'a' || s[0] > 'z') && (s[0] < 'A' || s[0] > 'Z') {
+		return false
+	}
+	for _, r := range s {
+		if (r < 'a' || r > 'z') && (r < 'A' || r > 'Z') && (r < '0' || r > '9') && r != '_' {
+			return false
+		}
+	}
+	return true
 }

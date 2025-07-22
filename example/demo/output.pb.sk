@@ -61,6 +61,17 @@ namespace google.protobuf {
 			writer.write(_unknownFields)
 			return writer.buffer
 		}
+
+		def marshalJSON dynamic {
+			var result = {} as dynamic
+			if __seconds.isSome {
+				result.seconds = __seconds.unwrapUnchecked
+			}
+			if __nanos.isSome {
+				result.nanos = __nanos.unwrapUnchecked
+			}
+			return result
+		}
 	}
 	namespace Timestamp {
 		# unmarshal
@@ -329,6 +340,34 @@ namespace tutorial {
 			writer.write(_unknownFields)
 			return writer.buffer
 		}
+
+		def marshalJSON dynamic {
+			var result = {} as dynamic
+			if __name.isSome {
+				result.name = __name.unwrapUnchecked
+			}
+			if __id.isSome {
+				result.id = __id.unwrapUnchecked
+			}
+			if __email.isSome {
+				result.email = __email.unwrapUnchecked
+			}
+			if __age.isSome {
+				result.age = __age.unwrapUnchecked
+			}
+			result.phones = __phones.map<dynamic>((item) => item.marshalJSON)
+			if __lastUpdated.isSome {
+				result.lastUpdated = __lastUpdated.unwrapUnchecked.marshalJSON
+			}
+			result.scores = __scores.map<dynamic>((item) => item)
+			if __imageUrl.isSome {
+				result.imageUrl = __imageUrl.unwrapUnchecked
+			}
+			if __imageData.isSome {
+				result.imageData = __imageData.unwrapUnchecked
+			}
+			return result
+		}
 	}
 	namespace Person {
 		# unmarshal
@@ -454,6 +493,17 @@ namespace tutorial {
 				writer.write(_unknownFields)
 				return writer.buffer
 			}
+
+			def marshalJSON dynamic {
+				var result = {} as dynamic
+				if __number.isSome {
+					result.number = __number.unwrapUnchecked
+				}
+				if __type.isSome {
+					result.type = __type.unwrapUnchecked.toString
+				}
+				return result
+			}
 		}
 		namespace PhoneNumber {
 			# unmarshal
@@ -536,6 +586,12 @@ namespace tutorial {
 			}
 			writer.write(_unknownFields)
 			return writer.buffer
+		}
+
+		def marshalJSON dynamic {
+			var result = {} as dynamic
+			result.people = __people.map<dynamic>((item) => item.marshalJSON)
+			return result
 		}
 	}
 	namespace AddressBook {

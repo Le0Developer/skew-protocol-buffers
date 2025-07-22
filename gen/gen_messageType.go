@@ -126,7 +126,23 @@ func (g *Gen) generateMessageType(namespace string, messageType *descriptorpb.De
 		g.W.WriteLinef("writer.write(_unknownFields)")
 	}
 	g.W.WriteLinef("return writer.buffer")
+	g.W.WriteLine("}")
 
+	g.W.WriteLine("")
+	g.W.WriteLine("def marshalJSON dynamic {")
+	g.W.WriteLine("var result = {} as dynamic")
+
+	if g.options.ShuffleFields {
+		rand.Shuffle(len(fields), func(i, j int) {
+			fields[i], fields[j] = fields[j], fields[i]
+		})
+	}
+
+	for _, field := range fields {
+		g.generateMessageFieldJSONMarshaller(field)
+	}
+
+	g.W.WriteLine("return result")
 	g.W.WriteLine("}")
 
 	g.W.WriteLine("}")
@@ -284,6 +300,37 @@ func (g *Gen) generateMessageFieldMarshaller(field fieldInfo) {
 		g.W.WriteLine("}")
 	}
 	g.W.WriteLine("}")
+}
+
+func (g *Gen) generateMessageFieldJSONMarshaller(field fieldInfo) {
+	accessor := "." + field.Name()
+	if !isValidSkewIdentifier(accessor[1:]) {
+		accessor = fmt.Sprintf("[%q]", accessor[1:])
+	}
+
+	value := field.PrivateName()
+	if !field.Repeated {
+		value += ".unwrapUnchecked"
+	}
+
+	modifier := ""
+
+	if field.TypeInfo.Enum {
+		modifier += ".toString"
+	} else if field.TypeInfo.SkewType == "" {
+		modifier += ".marshalJSON"
+	}
+
+	if field.Repeated {
+		value = fmt.Sprintf("%s.map<dynamic>((item) => item%s)", value, modifier)
+	} else {
+		value += modifier
+		g.W.WriteLinef("if %s.isSome {", field.PrivateName())
+	}
+	g.W.WriteLinef("result%s = %s", accessor, value)
+	if !field.Repeated {
+		g.W.WriteLine("}")
+	}
 }
 
 func (g *Gen) generateMessageFieldUnmarshaller(field fieldInfo, name string, oneOfs []*oneOfInfo) {

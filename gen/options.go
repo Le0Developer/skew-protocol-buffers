@@ -25,6 +25,8 @@ type Options struct {
 	// However, in Skew this is not necessary as enums are properly namespaced.
 	// If this is set to true, the generated code will use `RED` instead of `COLOR_RED`.
 	// The heuristic is that we convert the enum name to uppercase and then strip it from the enum value.
+	// NOTE: When marshalling to JSON, the enum value will be STRIPPED OF THE PREFIX. This is technically against the protobuf spec,
+	// but that's just how the toString method of enums works in Skew. The marshalJSON method is not intended to be ProtoJSON compatible.
 	StripEnumPrefix bool
 }
 
