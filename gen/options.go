@@ -17,12 +17,22 @@ type Options struct {
 	// ShuffleFields indicates whether to shuffle the order of fields in the generated code.
 	// This can be useful for testing purposes to ensure that the code does not rely on field order.
 	ShuffleFields bool
+
+	// StripEnumPrefix indicates whether to strip the prefix from enum values in the generated code.
+	// This is useful when you want to use enum values without the prefix in your code.
+	// Due to C++ convetions, protobuf enum values are prefixed with the enum name.
+	// For example, if you have an enum `Color` with a value `RED`, the generated code will have `COLOR_RED`.
+	// However, in Skew this is not necessary as enums are properly namespaced.
+	// If this is set to true, the generated code will use `RED` instead of `COLOR_RED`.
+	// The heuristic is that we convert the enum name to uppercase and then strip it from the enum value.
+	StripEnumPrefix bool
 }
 
 func defaultOptions() Options {
 	return Options{
 		PreserveUnknownFields: true,
 		ShuffleFields:         true,
+		StripEnumPrefix:       true,
 	}
 }
 
@@ -30,6 +40,7 @@ func (o *Options) parseOptions(opt string) error {
 	fields := map[string]*bool{
 		"PreserveUnknownFields": &o.PreserveUnknownFields,
 		"ShuffleFields":         &o.ShuffleFields,
+		"StripEnumPrefix":       &o.StripEnumPrefix,
 	}
 
 	args := strings.Split(opt, ",")

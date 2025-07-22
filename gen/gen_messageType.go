@@ -49,6 +49,7 @@ func (g *Gen) generateMessageType(namespace string, messageType *descriptorpb.De
 		}
 
 		fieldInfo := fieldInfo{
+			G:          g,
 			Field:      field,
 			TypeInfo:   typeInfo,
 			SkewType:   typeInfo.SkewType,
@@ -319,6 +320,7 @@ func (g *Gen) generateMessageFieldUnmarshaller(field fieldInfo, name string, one
 }
 
 type fieldInfo struct {
+	G          *Gen
 	Field      *descriptorpb.FieldDescriptorProto
 	TypeInfo   Type
 	SkewType   string
@@ -363,7 +365,10 @@ func (f fieldInfo) DefaultValue() string {
 	if f.TypeInfo.SkewType == "string" {
 		return strconv.Quote(defaultValue)
 	} else if f.TypeInfo.Enum {
-		return fmt.Sprintf("%s.%s", f.SkewType, defaultValue)
+		// very cursed, hopefully this works
+		enumName := strings.TrimPrefix(f.Field.GetTypeName(), ".")
+		enumNameParts := strings.Split(enumName, ".")
+		return fmt.Sprintf("%s.%s", f.SkewType, f.G.enumValueName(enumNameParts[len(enumNameParts)-1], defaultValue))
 	}
 
 	return defaultValue

@@ -11,14 +11,14 @@ message Person {
   float age = 9;
 
   enum PhoneType {
-    MOBILE = 0;
-    HOME = 1;
-    WORK = 2;
+    PHONE_TYPE_MOBILE = 0;
+    PHONE_TYPE_HOME = 1;
+    PHONE_TYPE_WORK = 2;
   }
 
   message PhoneNumber {
     string number = 1 [default="+1234567890"];
-    PhoneType type = 2 [default = WORK];
+    PhoneType type = 2 [default = PHONE_TYPE_WORK];
   }
 
   repeated PhoneNumber phones = 4;

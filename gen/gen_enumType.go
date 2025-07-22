@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"slices"
+	"strings"
 
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -53,7 +54,7 @@ func (g *Gen) generateEnumType(enumType *descriptorpb.EnumDescriptorProto) error
 		return int(a.GetNumber()) - int(b.GetNumber())
 	})
 
-	for _, value := range enumType.Value {
+	for _, value := range orderedValues {
 		n := value.GetNumber()
 		// skew only has "implicit" numbering for enums, so we need to add
 		// the missing values explicitly if they are not present in the enum
@@ -68,7 +69,7 @@ func (g *Gen) generateEnumType(enumType *descriptorpb.EnumDescriptorProto) error
 		if value.Options.GetDeprecated() {
 			g.W.WriteLine("@deprecated")
 		}
-		g.W.WriteLinef("    %s", value.GetName())
+		g.W.WriteLinef("    %s", g.enumValueName(name, value.GetName()))
 		if isFlags {
 			nextValue *= 2 // next power of two
 		} else {
@@ -79,4 +80,12 @@ func (g *Gen) generateEnumType(enumType *descriptorpb.EnumDescriptorProto) error
 	g.W.WriteLine("}")
 
 	return nil
+}
+
+func (g *Gen) enumValueName(name string, value string) string {
+	if !g.options.StripEnumPrefix {
+		return value
+	}
+	enumPrefix := screamingCase(name)
+	return strings.TrimPrefix(value, enumPrefix+"_")
 }
