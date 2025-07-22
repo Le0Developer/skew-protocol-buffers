@@ -2,6 +2,7 @@ package gen
 
 import (
 	"fmt"
+	"strings"
 
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -22,8 +23,9 @@ func (g *Gen) generateFile(descriptor *descriptorpb.FileDescriptorProto) error {
 	if descriptor.Options.GetDeprecated() {
 		g.W.WriteLine("@deprecated")
 	}
-	g.W.WriteLinef("namespace %s {", packageName)
+
 	g.namespaces = append(g.namespaces, packageName)
+	g.W.WriteLinef("namespace %s {", strings.Join(g.namespaces, "."))
 
 	g.W.WriteLine("# message types")
 	for _, messageType := range descriptor.MessageType {

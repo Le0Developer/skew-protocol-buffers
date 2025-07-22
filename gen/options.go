@@ -28,6 +28,12 @@ type Options struct {
 	// NOTE: When marshalling to JSON, the enum value will be STRIPPED OF THE PREFIX. This is technically against the protobuf spec,
 	// but that's just how the toString method of enums works in Skew. The marshalJSON method is not intended to be ProtoJSON compatible.
 	StripEnumPrefix bool
+
+	// NamespacePrefix is the prefix to use for the generated code's namespace.
+	// For example you might want to put all protobuf messages in a `pb` namespace.
+	// NOTE: please don't use the proto namespace as it's used by the protobuf runtime
+	// and might cause conflicts.
+	NamespacePrefix string
 }
 
 func defaultOptions() Options {
@@ -43,6 +49,7 @@ func (o *Options) parseOptions(opt string) error {
 		"PreserveUnknownFields": &o.PreserveUnknownFields,
 		"ShuffleFields":         &o.ShuffleFields,
 		"StripEnumPrefix":       &o.StripEnumPrefix,
+		"NamespacePrefix":       &o.NamespacePrefix,
 	}
 
 	args := strings.Split(opt, ",")

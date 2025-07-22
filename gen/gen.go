@@ -30,6 +30,10 @@ func (g *Gen) Generate(req *pluginpb.CodeGeneratorRequest) (*pluginpb.CodeGenera
 		g.W.WriteLinef("# Params: %q", params)
 	}
 
+	if g.options.NamespacePrefix != "" {
+		g.namespaces = append(g.namespaces, g.options.NamespacePrefix)
+	}
+
 	for _, file := range req.ProtoFile {
 		if err := g.generateFile(file); err != nil {
 			return nil, fmt.Errorf("error generating file %s: %w", file.GetName(), err)
