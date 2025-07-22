@@ -1,8 +1,7 @@
 # Select parts of https://github.com/Le0Developer/skew-vendor required to run
 # protobuf
 
-# cat stdlib/*.sk encoding/utf8.sk
-
+# cat stdlib/*.sk time/*.sk encoding/utf8.sk future/*.sk
 namespace Exceptions {
   const UNWRAP_OPTION_NONE = Symbol.new("UNWRAP_OPTION_NONE")
   const UNWRAP_RESULT_ERROR = Symbol.new("UNWRAP_RESULT_ERROR")
@@ -220,6 +219,75 @@ namespace Symbol {
     }
   }
 }
+namespace time {
+  type Time : double {
+    def +(other Duration) Time {
+      return (self as double + other as double) as Time
+    }
+    def -(other Time) Duration {
+      return (self as double - other as double) as Duration
+    }
+  }
+}
+namespace time {
+  type Duration : int {
+    def <=>(other Duration) int {
+      return self as int - other as int
+    }
+    def +(other Duration) Duration {
+      return (self as int + other as int) as Duration
+    }
+    def -(other Duration) Duration {
+      return (self as int - other as int) as Duration
+    }
+    def *(factor int) Duration {
+      return (self as int * factor) as Duration
+    }
+
+    def milliseconds int {
+      return self as int
+    }
+    def seconds int {
+      return self as int / SECONDS
+    }
+    def minutes int {
+      return self as int / MINUTES
+    }
+    def hours int {
+      return self as int / HOURS
+    }
+  }
+
+  const MILLISECONDS = 1
+  const SECONDS = 1000 * MILLISECONDS
+  const MINUTES = 60 * SECONDS
+  const HOURS = 60 * MINUTES
+
+  namespace Duration {
+    def fromMilliseconds(ms int) Duration {
+      return (ms * MILLISECONDS) as Duration
+    }
+    def fromSeconds(s int) Duration {
+      return (s * SECONDS) as Duration
+    }
+    def fromMinutes(m int) Duration {
+      return (m * MINUTES) as Duration
+    }
+    def fromHours(h int) Duration {
+      return (h * HOURS) as Duration
+    }
+  }
+}
+namespace time {
+  type Monotonic : int {
+    def +(other Duration) Monotonic {
+      return (self as int + other as int) as Monotonic
+    }
+    def -(other Monotonic) Duration {
+      return (self as int - other as int) as Duration
+    }
+  }
+}
 namespace encoding.utf8 {
   # utf32 code points to utf8 bytes
   def encode(codePoints List<int>) List<int> {
@@ -269,5 +337,109 @@ namespace encoding.utf8 {
       }
     }
     return codePoints
+  }
+}
+namespace future {
+  class Future<T> :: Waitable {
+    var _resolved Option<T> = none<T>()
+    var _listeners List<fn (T)> = []
+
+    def resolve(value T) {
+      _resolved = some<T>(value)
+      for listener in _listeners {
+        listener(value)
+      }
+    }
+
+    @alwaysinline
+    def wait(fn fn ()) {
+      if _resolved.isSome {
+        fn()
+      } else {
+        _listeners.append(fn as dynamic)
+      }
+    }
+
+    @alwaysinline
+    def wait(fn fn (T)) {
+      if _resolved.isSome {
+        fn(_resolved.unwrap)
+      } else {
+        _listeners.append(fn)
+      }
+    }
+
+    @alwaysinline
+    def map<U>(fn fn (T) U) Future<U> {
+      var newFut = Future<U>.new
+      wait((value) => {
+        newFut.resolve(fn(value))
+      })
+      return newFut
+    }
+  }
+
+  namespace Future {
+    @alwaysinline
+    def fromPromise<V, E>(promise dynamic) Future<Result<V, E>> {
+      var fut = Future<Result<V, E>>.new
+      promise.then((value) => {
+        fut.resolve(ok<V, E>(value))
+      }, (error) => {
+        fut.resolve(err<V, E>(error))
+      })
+      return fut
+    }
+
+    def resolved(value T) Future<T> {
+      var fut = Future<T>.new
+      fut.resolve(value)
+      return fut
+    }
+  }
+}
+namespace future {
+  class Signal :: Waitable {
+    var _listeners List<fn ()> = []
+
+    def resolve {
+      for listener in _listeners {
+        listener()
+      }
+    }
+
+    def wait(fn fn ()) {
+      _listeners.append(fn)
+    }
+  }
+}
+namespace future {
+  interface Waitable {
+    def wait(fn fn ())
+  }
+}
+namespace future {
+  class Waitgroup :: Waitable {
+    var _count int = 0
+    var _signal Signal = Signal.new
+
+    def add {
+      _count += 1
+    }
+
+    def add(count int) {
+      _count += count
+    }
+
+    def done {
+      _count -= 1
+      if _count == 0 {
+        _signal.resolve
+      }
+    }
+
+    def wait(fn fn()) {
+      _signal.wait(fn)
+    }
   }
 }
