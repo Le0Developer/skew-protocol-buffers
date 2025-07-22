@@ -7,7 +7,7 @@ build:
 	go build -o dist/protoc-gen-skew cmd/protoc-gen-skew/main.go
 
 demo: build
-	PATH="./dist:${PATH}" protoc --skew_out=./example/demo example/demo.proto
+	PATH="./dist:${PATH}" protoc --skew_out="-ShuffleFields:./example/demo" example/demo.proto
 
 run-demo: ensure-skewc demo
 	node skewc.js runtime/*.sk example/main.sk example/demo/*.sk tests/stdlib.sk --output-file=example/demo.js --globalize-functions
