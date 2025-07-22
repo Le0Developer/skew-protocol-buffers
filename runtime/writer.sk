@@ -32,10 +32,11 @@ namespace proto {
 
     def writeInt32(fieldNumber int, value int) {
       writeTag(TagLengthValue.new(.I32, fieldNumber))
-      write(value & 0xFF)
-      write((value >> 8) & 0xFF)
-      write((value >> 16) & 0xFF)
-      write((value >> 24) & 0xFF)
+      writeInt32(value)
+    }
+
+    def writeInt32(value int) {
+      write([value & 0xFF, (value >> 8) & 0xFF, (value >> 16) & 0xFF, (value >> 24) & 0xFF])
     }
 
     def writeTag(tag TagLengthValue) {

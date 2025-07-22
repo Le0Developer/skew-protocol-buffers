@@ -31,6 +31,8 @@ message Person {
     string image_url = 7;
     bytes image_data = 8;
   }
+
+  repeated sfixed32 magic_numbers = 10;
 }
 
 // Our address book file is just one of these.

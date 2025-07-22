@@ -13,6 +13,10 @@ def main {
   x.scores.append(100)
   x.scores.append(150)
   x.scores.append(200)
+  x.magicNumbers.append((1 << 8) - 1)
+  x.magicNumbers.append((1 << 16) - 1)
+  x.magicNumbers.append((1 << 24) - 1)
+  x.magicNumbers.append(-1)
 
   var marshaled = x.marshal
   marshaled.append([200, 1, 172, 2, 144, 3])

@@ -293,7 +293,11 @@ func (g *Gen) generateMessageFieldMarshaller(field fieldInfo) {
 			g.W.WriteLinef("} else {")
 			g.W.WriteLinef("var buffer = proto.Writer.new")
 			g.W.WriteLinef("for item in %s {", field.PrivateName())
-			g.W.WriteLinef("buffer.writeVarInt(%s)", field.Encode("item"))
+			if field.TypeInfo.Enum {
+				g.W.WriteLinef("buffer.writeVarInt(%s)", field.Encode("item"))
+			} else {
+				g.W.WriteLinef("buffer.write%s(%s)", field.Serialize(), field.Encode("item"))
+			}
 			g.W.WriteLine("}")
 			g.W.WriteLinef("writer.writeBytes(%d, buffer.buffer)", field.Field.GetNumber())
 		}

@@ -151,6 +151,7 @@ namespace tutorial {
 		var __scores = List<int>.new
 		var __imageUrl = none<string>()
 		var __imageData = none<List<int>>()
+		var __magicNumbers = List<int>.new
 
 		var _oneof_0 = Person.Avatar.None
 
@@ -292,6 +293,14 @@ namespace tutorial {
 			return __imageData.isSome
 		}
 
+		def magicNumbers List<int> {
+			return __magicNumbers
+		}
+
+		def magicNumbers=(value List<int>) {
+			__magicNumbers = value
+		}
+
 		# oneofs accessors
 		def whichAvatar Person.Avatar {
 			return _oneof_0
@@ -337,6 +346,17 @@ namespace tutorial {
 			if __imageData.isSome {
 				writer.writeBytes(8, __imageData.unwrapUnchecked)
 			}
+			if __magicNumbers.count > 0 {
+				if __magicNumbers.count == 1 {
+					writer.writeInt32(10, proto.internal_encoding.ZigZag.encode(__magicNumbers[0]))
+				} else {
+					var buffer = proto.Writer.new
+					for item in __magicNumbers {
+						buffer.writeInt32(proto.internal_encoding.ZigZag.encode(item))
+					}
+					writer.writeBytes(10, buffer.buffer)
+				}
+			}
 			writer.write(_unknownFields)
 			return writer.buffer
 		}
@@ -366,6 +386,7 @@ namespace tutorial {
 			if __imageData.isSome {
 				result.imageData = __imageData.unwrapUnchecked
 			}
+			result.magicNumbers = __magicNumbers.map<dynamic>((item) => item)
 			return result
 		}
 	}
@@ -421,6 +442,17 @@ namespace tutorial {
 						assert(tag.tag == .LEN)
 						message.__imageData = some<List<int>>(reader.readBytes)
 						message._oneof_0 = Person.Avatar.ImageData
+					}
+					case 10 {
+						if tag.tag == .LEN {
+							var buffer = proto.Reader.new(reader.readBytes)
+							while !buffer.done {
+								message.magicNumbers.append(proto.internal_encoding.ZigZag.decode(buffer.readInt32))
+							}
+						} else {
+							assert(tag.tag == .I32)
+							message.__magicNumbers.append(proto.internal_encoding.ZigZag.decode(reader.readInt32))
+						}
 					}
 					default {
 						message._unknownFields.append(reader.readRaw(tag, start))
