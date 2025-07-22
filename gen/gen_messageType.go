@@ -57,10 +57,7 @@ func (g *Gen) generateMessageType(namespace string, messageType *descriptorpb.De
 		}
 
 		if fieldInfo.SkewType == "" {
-			typ := field.GetTypeName()
-			if strings.HasPrefix(typ, ".") {
-				typ = strings.TrimPrefix(typ, ".")
-			}
+			typ := strings.TrimPrefix(field.GetTypeName(), ".")
 			fieldInfo.SkewType = typ
 		}
 

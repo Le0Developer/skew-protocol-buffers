@@ -24,7 +24,9 @@ func (g *Gen) Generate(req *pluginpb.CodeGeneratorRequest) (*pluginpb.CodeGenera
 	g.options = defaultOptions()
 	params := req.GetParameter()
 	if params != "" {
-		g.options.parseOptions(params)
+		if err := g.options.parseOptions(params); err != nil {
+			return nil, fmt.Errorf("error parsing options: %w", err)
+		}
 		g.W.WriteLinef("# Params: %q", params)
 	}
 

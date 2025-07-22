@@ -13,15 +13,8 @@ func (g *Gen) generateService(service *descriptorpb.ServiceDescriptorProto) erro
 	methods := []serviceMethod{}
 	for _, method := range service.Method {
 		name := method.GetName()
-		inputType := method.GetInputType()
-		outputType := method.GetOutputType()
-
-		if strings.HasPrefix(inputType, ".") {
-			inputType = strings.TrimPrefix(inputType, ".")
-		}
-		if strings.HasPrefix(outputType, ".") {
-			outputType = strings.TrimPrefix(outputType, ".")
-		}
+		inputType := strings.TrimPrefix(method.GetInputType(), ".")
+		outputType := strings.TrimPrefix(method.GetOutputType(), ".")
 
 		methods = append(methods, serviceMethod{
 			name:       name,
