@@ -34,6 +34,9 @@ func (w *CodeWriter) Dedent() {
 
 // Write writes a string at the current indentation level, without a newline.
 func (w *CodeWriter) Write(s string) {
+	if w.indentLevel < 0 {
+		panic("indentation level cannot be negative, there's a bug in the code writer")
+	}
 	w.WriteRaw(strings.Repeat(w.indentStr, w.indentLevel))
 	w.WriteRaw(s)
 }
@@ -50,17 +53,14 @@ func (w *CodeWriter) WriteLine(s string) {
 		return
 	}
 	trimmed := strings.TrimLeft(s, " \t")
-	// Dedent before writing if line starts with '}'.
-	if strings.HasPrefix(trimmed, "}") {
-		w.indentLevel--
-		if w.indentLevel < 0 {
-			w.indentLevel = 0
-		}
-	}
+
+	// surely there's a better way to do this, but this is the simplest
+	dedents := len(trimmed) - len(strings.TrimLeft(trimmed, "}"))
+	indents := len(trimmed) - len(strings.TrimRight(trimmed, "{"))
+	w.indentLevel -= dedents
 	w.Write(s)
 	w.buf.WriteByte('\n')
-	// Indent after writing for every '{' in the line.
-	w.indentLevel += strings.Count(s, "{")
+	w.indentLevel += indents
 }
 
 // Writef writes a formatted string at the current indentation level, without a newline.
