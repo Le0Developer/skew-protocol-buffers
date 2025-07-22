@@ -80,9 +80,11 @@ func (g *Gen) generateMessageType(namespace string, messageType *descriptorpb.De
 	g.W.WriteLine("# field definitions")
 
 	// Randomize field order to avoid any implicit dependencies
-	rand.Shuffle(len(fields), func(i, j int) {
-		fields[i], fields[j] = fields[j], fields[i]
-	})
+	if g.options.ShuffleFields {
+		rand.Shuffle(len(fields), func(i, j int) {
+			fields[i], fields[j] = fields[j], fields[i]
+		})
+	}
 	for _, field := range fields {
 		g.W.WriteLinef("var %s = %s", field.PrivateName(), field.Initializer())
 	}
@@ -113,9 +115,11 @@ func (g *Gen) generateMessageType(namespace string, messageType *descriptorpb.De
 	g.W.WriteLine("def marshal List<int> {")
 	g.W.WriteLine("var writer = proto.Writer.new")
 
-	rand.Shuffle(len(fields), func(i, j int) {
-		fields[i], fields[j] = fields[j], fields[i]
-	})
+	if g.options.ShuffleFields {
+		rand.Shuffle(len(fields), func(i, j int) {
+			fields[i], fields[j] = fields[j], fields[i]
+		})
+	}
 	for _, field := range fields {
 		g.generateMessageFieldMarshaller(field)
 	}
@@ -139,9 +143,11 @@ func (g *Gen) generateMessageType(namespace string, messageType *descriptorpb.De
 	}
 	g.W.WriteLine("var tag = reader.readTag")
 
-	rand.Shuffle(len(fields), func(i, j int) {
-		fields[i], fields[j] = fields[j], fields[i]
-	})
+	if g.options.ShuffleFields {
+		rand.Shuffle(len(fields), func(i, j int) {
+			fields[i], fields[j] = fields[j], fields[i]
+		})
+	}
 	g.W.WriteLine("switch tag.fieldNumber {")
 	for _, field := range fields {
 		g.generateMessageFieldUnmarshaller(field, name, oneOfs)

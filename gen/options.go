@@ -13,17 +13,23 @@ type Options struct {
 	// If this behavior is not required (e.g. an older version will never read and write back a message created by a newer version),
 	// you can set this to false to reduce the size of the generated code.
 	PreserveUnknownFields bool
+
+	// ShuffleFields indicates whether to shuffle the order of fields in the generated code.
+	// This can be useful for testing purposes to ensure that the code does not rely on field order.
+	ShuffleFields bool
 }
 
 func defaultOptions() Options {
 	return Options{
 		PreserveUnknownFields: true,
+		ShuffleFields:         true,
 	}
 }
 
 func (o *Options) parseOptions(opt string) error {
 	fields := map[string]*bool{
 		"PreserveUnknownFields": &o.PreserveUnknownFields,
+		"ShuffleFields":         &o.ShuffleFields,
 	}
 
 	args := strings.Split(opt, ",")
