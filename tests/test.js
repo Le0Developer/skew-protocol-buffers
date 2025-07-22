@@ -90,20 +90,22 @@
     return value;
   };
 
-  // https://protobuf.dev/programming-guides/encoding/#signed-ints
-  proto.zigzag = {};
+  proto.internal_encoding = {};
 
-  proto.zigzag.encode = function(value) {
+  // https://protobuf.dev/programming-guides/encoding/#signed-ints
+  proto.internal_encoding.ZigZag = {};
+
+  proto.internal_encoding.ZigZag.encode = function(value) {
     return value << 1 ^ value >> 31;
   };
 
-  proto.zigzag.decode = function(value) {
+  proto.internal_encoding.ZigZag.decode = function(value) {
     return value >> 1 ^ -(value & 1);
   };
 
-  proto.$float = {};
+  proto.internal_encoding.Float = {};
 
-  proto.$float.encode = function(value) {
+  proto.internal_encoding.Float.encode = function(value) {
     if (isNaN(value)) {
       // NaN in IEEE 754
       return 2143289344;
@@ -128,7 +130,7 @@
     return sign << 31 | (exponent & 255) << 23 | mantissa * 8388607;
   };
 
-  proto.$float.decode = function(value) {
+  proto.internal_encoding.Float.decode = function(value) {
     var sign = value >>> 31;
     var exponent = value >>> 23 & 255;
     var mantissa = value & 8388607;
@@ -173,6 +175,8 @@
 
     while (!proto.Reader.done(self) && shift < 35) {
       var byte = proto.Reader.read(self);
+
+      // lester.debug("readVarInt: \(byte) at position \(position - 1) of \(buffer.count) with value \(value) and shift \(shift)")
       value |= (byte & 127) << shift;
 
       if ((byte & 128) == 0) {
@@ -267,6 +271,8 @@
 
     while (value != 0 || remainder != 0) {
       var byte = value & 127;
+
+      // lester.debug("writeVarInt: value: \(value), byte: \(byte)")
       value = value >>> 7 | (remainder & 127) << 25;
       remainder >>>= 7;
 
@@ -657,67 +663,65 @@
         lester.TestingSuite.equal(t, proto.TagLengthValue.fieldNumber(tlv), 1);
       });
     });
-    lester.TestUnit.describe(t, 'zigzag', function(unit) {
+    lester.TestUnit.describe(t, 'ZigZag', function(unit) {
       lester.TestUnit.it(unit, 'encode', function(t) {
-        lester.TestingSuite.equal(t, proto.zigzag.encode(0), 0);
-        lester.TestingSuite.equal(t, proto.zigzag.encode(1), 2);
-        lester.TestingSuite.equal(t, proto.zigzag.encode(-1), 1);
-        lester.TestingSuite.equal(t, proto.zigzag.encode(2), 4);
-        lester.TestingSuite.equal(t, proto.zigzag.encode(-2), 3);
+        lester.TestingSuite.equal(t, proto.internal_encoding.ZigZag.encode(0), 0);
+        lester.TestingSuite.equal(t, proto.internal_encoding.ZigZag.encode(1), 2);
+        lester.TestingSuite.equal(t, proto.internal_encoding.ZigZag.encode(-1), 1);
+        lester.TestingSuite.equal(t, proto.internal_encoding.ZigZag.encode(2), 4);
+        lester.TestingSuite.equal(t, proto.internal_encoding.ZigZag.encode(-2), 3);
       });
       lester.TestUnit.it(unit, 'decode', function(t) {
-        lester.TestingSuite.equal(t, proto.zigzag.decode(0), 0);
-        lester.TestingSuite.equal(t, proto.zigzag.decode(2), 1);
-        lester.TestingSuite.equal(t, proto.zigzag.decode(1), -1);
-        lester.TestingSuite.equal(t, proto.zigzag.decode(4), 2);
-        lester.TestingSuite.equal(t, proto.zigzag.decode(3), -2);
+        lester.TestingSuite.equal(t, proto.internal_encoding.ZigZag.decode(0), 0);
+        lester.TestingSuite.equal(t, proto.internal_encoding.ZigZag.decode(2), 1);
+        lester.TestingSuite.equal(t, proto.internal_encoding.ZigZag.decode(1), -1);
+        lester.TestingSuite.equal(t, proto.internal_encoding.ZigZag.decode(4), 2);
+        lester.TestingSuite.equal(t, proto.internal_encoding.ZigZag.decode(3), -2);
       });
     });
-    lester.TestUnit.describe(t, 'float', function(unit) {
+    lester.TestUnit.describe(t, 'Float', function(unit) {
       lester.TestUnit.it(unit, 'encode', function(t) {
-        lester.TestingSuite.equal(t, proto.$float.encode(0), 0);
-        lester.TestingSuite.equal(t, proto.$float.encode(1), 1065353216);
-        lester.TestingSuite.equal(t, proto.$float.encode(-1), -1082130432);
-        lester.TestingSuite.equal(t, proto.$float.encode(3.14), 1078523329);
+        lester.TestingSuite.equal(t, proto.internal_encoding.Float.encode(0), 0);
+        lester.TestingSuite.equal(t, proto.internal_encoding.Float.encode(1), 1065353216);
+        lester.TestingSuite.equal(t, proto.internal_encoding.Float.encode(-1), -1082130432);
+        lester.TestingSuite.equal(t, proto.internal_encoding.Float.encode(3.14), 1078523329);
       });
       lester.TestUnit.it(unit, 'decode', function(t) {
-        lester.TestingSuite.close(t, proto.$float.decode(0), 0);
-        lester.TestingSuite.close(t, proto.$float.decode(1065353216), 1);
-        lester.TestingSuite.close(t, proto.$float.decode(-1082130432), -1);
-        lester.TestingSuite.close(t, proto.$float.decode(1078523329), 3.14);
+        lester.TestingSuite.close(t, proto.internal_encoding.Float.decode(0), 0);
+        lester.TestingSuite.close(t, proto.internal_encoding.Float.decode(1065353216), 1);
+        lester.TestingSuite.close(t, proto.internal_encoding.Float.decode(-1082130432), -1);
+        lester.TestingSuite.close(t, proto.internal_encoding.Float.decode(1078523329), 3.14);
       });
       lester.TestUnit.it(unit, 'NAN', function(t) {
         // NaN in IEEE 754
-        lester.TestingSuite.equal(t, proto.$float.encode(in_Math.NAN()), 2143289344);
+        lester.TestingSuite.equal(t, proto.internal_encoding.Float.encode(in_Math.NAN()), 2143289344);
 
         // NaN in IEEE 754
-        lester.TestingSuite.truthy(t, isNaN(proto.$float.decode(2143289344)));
+        lester.TestingSuite.truthy(t, isNaN(proto.internal_encoding.Float.decode(2143289344)));
 
         // Another representation of NaN
-        lester.TestingSuite.truthy(t, isNaN(proto.$float.decode(2143289344)));
+        lester.TestingSuite.truthy(t, isNaN(proto.internal_encoding.Float.decode(2143289344)));
       });
       lester.TestUnit.it(unit, 'infinity', function(t) {
         // Positive infinity in IEEE 754
-        lester.TestingSuite.equal(t, proto.$float.encode(in_Math.INFINITY()), 2139095040);
+        lester.TestingSuite.equal(t, proto.internal_encoding.Float.encode(in_Math.INFINITY()), 2139095040);
 
         // Negative infinity in IEEE 754
-        lester.TestingSuite.equal(t, proto.$float.encode(-in_Math.INFINITY()), -8388608);
+        lester.TestingSuite.equal(t, proto.internal_encoding.Float.encode(-in_Math.INFINITY()), -8388608);
 
         // Positive infinity
-        lester.TestingSuite.close(t, proto.$float.decode(2139095040), in_Math.INFINITY());
+        lester.TestingSuite.close(t, proto.internal_encoding.Float.decode(2139095040), in_Math.INFINITY());
 
         // Negative infinity
-        lester.TestingSuite.close(t, proto.$float.decode(-8388608), -in_Math.INFINITY());
+        lester.TestingSuite.close(t, proto.internal_encoding.Float.decode(-8388608), -in_Math.INFINITY());
       });
       lester.TestUnit.it(unit, 'fuzz', function(t) {
-        // let's make an LSR that encodes and decodes a float
         lester.TestingSuite.fuzz(t, function(v) {
-          lester.print('fuzzing float with value: ' + v.toString());
-          var encoded = proto.$float.encode(v);
-          var decoded = proto.$float.decode(encoded);
+          var encoded = proto.internal_encoding.Float.encode(v);
+          var decoded = proto.internal_encoding.Float.decode(encoded);
           lester.TestingSuite.close(t, decoded, v);
-          var encoded2 = proto.$float.encode(decoded);
-          var decoded2 = proto.$float.decode(encoded2);
+          var encoded2 = proto.internal_encoding.Float.encode(decoded);
+          var decoded2 = proto.internal_encoding.Float.decode(encoded2);
           lester.TestingSuite.close(t, decoded2, decoded);
         });
       });
