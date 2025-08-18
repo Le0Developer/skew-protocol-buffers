@@ -31,8 +31,8 @@ type Options struct {
 
 	// NamespacePrefix is the prefix to use for the generated code's namespace.
 	// For example you might want to put all protobuf messages in a `pb` namespace.
-	// NOTE: please don't use the proto namespace as it's used by the protobuf runtime
-	// and might cause conflicts.
+	// NOTE: please don't use the `proto` namespace as it's used by the protobuf runtime
+	// and might cause conflicts. We recommend using `pb` instead.
 	NamespacePrefix string
 }
 
