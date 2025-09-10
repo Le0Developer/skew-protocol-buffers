@@ -34,22 +34,27 @@ type Options struct {
 	// NOTE: please don't use the `proto` namespace as it's used by the protobuf runtime
 	// and might cause conflicts. We recommend using `pb` instead.
 	NamespacePrefix string
+
+	// Use debug_redact to hide from marshalJSON
+	RedactJSONUsingDebugRedact bool
 }
 
 func defaultOptions() Options {
 	return Options{
-		PreserveUnknownFields: true,
-		ShuffleFields:         true,
-		StripEnumPrefix:       true,
+		PreserveUnknownFields:      true,
+		ShuffleFields:              true,
+		StripEnumPrefix:            true,
+		RedactJSONUsingDebugRedact: false,
 	}
 }
 
 func (o *Options) parseOptions(opt string) error {
 	fields := map[string]any{
-		"PreserveUnknownFields": &o.PreserveUnknownFields,
-		"ShuffleFields":         &o.ShuffleFields,
-		"StripEnumPrefix":       &o.StripEnumPrefix,
-		"NamespacePrefix":       &o.NamespacePrefix,
+		"PreserveUnknownFields":      &o.PreserveUnknownFields,
+		"ShuffleFields":              &o.ShuffleFields,
+		"StripEnumPrefix":            &o.StripEnumPrefix,
+		"RedactJSONUsingDebugRedact": &o.RedactJSONUsingDebugRedact,
+		"NamespacePrefix":            &o.NamespacePrefix,
 	}
 
 	args := strings.Split(opt, ",")

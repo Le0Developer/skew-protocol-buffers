@@ -307,6 +307,10 @@ func (g *Gen) generateMessageFieldMarshaller(field fieldInfo) {
 }
 
 func (g *Gen) generateMessageFieldJSONMarshaller(field fieldInfo) {
+	if g.options.RedactJSONUsingDebugRedact && field.Field.GetOptions().GetDebugRedact() {
+		return
+	}
+
 	accessor := "." + field.Name()
 	if !isValidSkewIdentifier(accessor[1:]) {
 		accessor = fmt.Sprintf("[%q]", accessor[1:])
