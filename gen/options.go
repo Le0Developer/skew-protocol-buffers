@@ -25,8 +25,8 @@ type Options struct {
 	// However, in Skew this is not necessary as enums are properly namespaced.
 	// If this is set to true, the generated code will use `RED` instead of `COLOR_RED`.
 	// The heuristic is that we convert the enum name to uppercase and then strip it from the enum value.
-	// NOTE: When marshalling to JSON, the enum value will be STRIPPED OF THE PREFIX. This is technically against the protobuf spec,
-	// but that's just how the toString method of enums works in Skew. The marshalJSON method is not intended to be ProtoJSON compatible.
+	// NOTE: When marshalling to object, the enum value will be STRIPPED OF THE PREFIX. This is technically against the protobuf spec,
+	// but that's just how the toString method of enums works in Skew.
 	StripEnumPrefix bool
 
 	// NamespacePrefix is the prefix to use for the generated code's namespace.
@@ -35,26 +35,26 @@ type Options struct {
 	// and might cause conflicts. We recommend using `pb` instead.
 	NamespacePrefix string
 
-	// Use debug_redact to hide from marshalJSON
-	RedactJSONUsingDebugRedact bool
+	// Use debug_redact to hide from marshalObject
+	RedactObjectUsingDebugRedact bool
 }
 
 func defaultOptions() Options {
 	return Options{
-		PreserveUnknownFields:      true,
-		ShuffleFields:              true,
-		StripEnumPrefix:            true,
-		RedactJSONUsingDebugRedact: false,
+		PreserveUnknownFields:        true,
+		ShuffleFields:                true,
+		StripEnumPrefix:              true,
+		RedactObjectUsingDebugRedact: false,
 	}
 }
 
 func (o *Options) parseOptions(opt string) error {
 	fields := map[string]any{
-		"PreserveUnknownFields":      &o.PreserveUnknownFields,
-		"ShuffleFields":              &o.ShuffleFields,
-		"StripEnumPrefix":            &o.StripEnumPrefix,
-		"RedactJSONUsingDebugRedact": &o.RedactJSONUsingDebugRedact,
-		"NamespacePrefix":            &o.NamespacePrefix,
+		"PreserveUnknownFields":        &o.PreserveUnknownFields,
+		"ShuffleFields":                &o.ShuffleFields,
+		"StripEnumPrefix":              &o.StripEnumPrefix,
+		"RedactObjectUsingDebugRedact": &o.RedactObjectUsingDebugRedact,
+		"NamespacePrefix":              &o.NamespacePrefix,
 	}
 
 	args := strings.Split(opt, ",")

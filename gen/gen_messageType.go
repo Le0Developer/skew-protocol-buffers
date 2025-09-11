@@ -129,7 +129,7 @@ func (g *Gen) generateMessageType(namespace string, messageType *descriptorpb.De
 	g.W.WriteLine("}")
 
 	g.W.WriteLine("")
-	g.W.WriteLine("def marshalJSON dynamic {")
+	g.W.WriteLine("def marshalObject dynamic {")
 	g.W.WriteLine("var result = {} as dynamic")
 
 	if g.options.ShuffleFields {
@@ -139,7 +139,7 @@ func (g *Gen) generateMessageType(namespace string, messageType *descriptorpb.De
 	}
 
 	for _, field := range fields {
-		g.generateMessageFieldJSONMarshaller(field)
+		g.generateMessageFieldObjectMarshaller(field)
 	}
 
 	g.W.WriteLine("return result")
@@ -306,8 +306,8 @@ func (g *Gen) generateMessageFieldMarshaller(field fieldInfo) {
 	g.W.WriteLine("}")
 }
 
-func (g *Gen) generateMessageFieldJSONMarshaller(field fieldInfo) {
-	if g.options.RedactJSONUsingDebugRedact && field.Field.GetOptions().GetDebugRedact() {
+func (g *Gen) generateMessageFieldObjectMarshaller(field fieldInfo) {
+	if g.options.RedactObjectUsingDebugRedact && field.Field.GetOptions().GetDebugRedact() {
 		return
 	}
 
@@ -326,7 +326,7 @@ func (g *Gen) generateMessageFieldJSONMarshaller(field fieldInfo) {
 	if field.TypeInfo.Enum {
 		modifier += ".toString"
 	} else if field.TypeInfo.SkewType == "" {
-		modifier += ".marshalJSON"
+		modifier += ".marshalObject"
 	}
 
 	if field.Repeated {

@@ -35,6 +35,6 @@ def main {
   var marshaled2 = y.marshal
   dynamic.console.log("marshaled2", marshaled2)
 
-  dynamic.console.log("JSON:", y.marshalJSON)
+  dynamic.console.log("Debug object:", y.marshalObject)
 }
 

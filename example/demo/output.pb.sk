@@ -62,7 +62,7 @@ namespace google.protobuf {
 			return writer.buffer
 		}
 
-		def marshalJSON dynamic {
+		def marshalObject dynamic {
 			var result = {} as dynamic
 			if __seconds.isSome {
 				result.seconds = __seconds.unwrapUnchecked
@@ -361,7 +361,7 @@ namespace tutorial {
 			return writer.buffer
 		}
 
-		def marshalJSON dynamic {
+		def marshalObject dynamic {
 			var result = {} as dynamic
 			if __name.isSome {
 				result.name = __name.unwrapUnchecked
@@ -375,9 +375,9 @@ namespace tutorial {
 			if __age.isSome {
 				result.age = __age.unwrapUnchecked
 			}
-			result.phones = __phones.map<dynamic>((item) => item.marshalJSON)
+			result.phones = __phones.map<dynamic>((item) => item.marshalObject)
 			if __lastUpdated.isSome {
-				result.lastUpdated = __lastUpdated.unwrapUnchecked.marshalJSON
+				result.lastUpdated = __lastUpdated.unwrapUnchecked.marshalObject
 			}
 			result.scores = __scores.map<dynamic>((item) => item)
 			if __imageUrl.isSome {
@@ -526,7 +526,7 @@ namespace tutorial {
 				return writer.buffer
 			}
 
-			def marshalJSON dynamic {
+			def marshalObject dynamic {
 				var result = {} as dynamic
 				if __number.isSome {
 					result.number = __number.unwrapUnchecked
@@ -620,9 +620,9 @@ namespace tutorial {
 			return writer.buffer
 		}
 
-		def marshalJSON dynamic {
+		def marshalObject dynamic {
 			var result = {} as dynamic
-			result.people = __people.map<dynamic>((item) => item.marshalJSON)
+			result.people = __people.map<dynamic>((item) => item.marshalObject)
 			return result
 		}
 	}
