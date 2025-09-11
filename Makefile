@@ -1,4 +1,4 @@
-.PHONY: build demo run-demo run-demo-release test test-debug test-compile test-compile-debug test-compile-release test-run install ensure-skewc
+.PHONY: build demo run-demo run-demo-release test test-debug test-compile test-compile-debug test-compile-release test-run install install-local ensure-skewc
 
 build:
 	mkdir -p dist
@@ -44,3 +44,6 @@ test-run:
 
 install:
 	GOPRIVATE=github.com/le0developer go install github.com/le0developer/skew-protocol-buffers/cmd/protoc-gen-skew@latest
+
+install-local:
+	go install ./cmd/protoc-gen-skew
