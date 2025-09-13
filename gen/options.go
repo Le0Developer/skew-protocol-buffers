@@ -37,6 +37,9 @@ type Options struct {
 
 	// Use debug_redact to hide from marshalObject
 	RedactObjectUsingDebugRedact bool
+
+	// Emit client and server code for gRPC services
+	GRPC bool
 }
 
 func defaultOptions() Options {
@@ -45,6 +48,7 @@ func defaultOptions() Options {
 		ShuffleFields:                true,
 		StripEnumPrefix:              true,
 		RedactObjectUsingDebugRedact: false,
+		GRPC:                         true,
 	}
 }
 
@@ -55,6 +59,7 @@ func (o *Options) parseOptions(opt string) error {
 		"StripEnumPrefix":              &o.StripEnumPrefix,
 		"RedactObjectUsingDebugRedact": &o.RedactObjectUsingDebugRedact,
 		"NamespacePrefix":              &o.NamespacePrefix,
+		"GRPC":                         &o.GRPC,
 	}
 
 	args := strings.Split(opt, ",")

@@ -42,11 +42,13 @@ func (g *Gen) generateFile(descriptor *descriptorpb.FileDescriptorProto) error {
 		}
 	}
 
-	g.W.WriteLine("")
-	g.W.WriteLine("# services")
-	for _, service := range descriptor.Service {
-		if err := g.generateService(service); err != nil {
-			return fmt.Errorf("error generating service %s: %w", service.GetName(), err)
+	if g.options.GRPC && len(descriptor.Service) > 0 {
+		g.W.WriteLine("")
+		g.W.WriteLine("# services")
+		for _, service := range descriptor.Service {
+			if err := g.generateService(service); err != nil {
+				return fmt.Errorf("error generating service %s: %w", service.GetName(), err)
+			}
 		}
 	}
 
