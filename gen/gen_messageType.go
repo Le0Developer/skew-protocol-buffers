@@ -212,9 +212,11 @@ func (g *Gen) generateMessageType(namespace string, messageType *descriptorpb.De
 
 	g.W.WriteLine("}")
 
-	g.W.WriteLine("")
-	g.W.WriteLine("# wellknown")
-	g.genWellKnown(fullName)
+	if isWellknown(fullName) {
+		g.W.WriteLine("")
+		g.W.WriteLine("# wellknown")
+		g.genWellKnownHelper(fullName)
+	}
 
 	return nil
 }
@@ -325,8 +327,13 @@ func (g *Gen) generateMessageFieldObjectMarshaller(field fieldInfo) {
 
 	if field.TypeInfo.Enum {
 		modifier += ".toString"
-	} else if field.TypeInfo.SkewType == "" {
-		modifier += ".marshalObject"
+	} else {
+		wellknown := getWellknown(field.SkewType)
+		if serializer, ok := wellknown.(wellknownDebugSerializer); ok {
+			modifier = serializer.debugSerializer(modifier)
+		} else if field.TypeInfo.SkewType == "" {
+			modifier += ".marshalObject"
+		}
 	}
 
 	if field.Repeated {
