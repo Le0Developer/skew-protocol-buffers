@@ -40,6 +40,12 @@ type Options struct {
 
 	// Emit client and server code for gRPC services
 	GRPC bool
+
+	// Enable obfuscation of gRPC service and method names
+	// This is enabled by performing the HMAC(key, full_method_name) and encoding the result in base64url
+	// This is the key used for the HMAC. If empty, no obfuscation is performed.
+	// NOTE: The gRPC client WILL ALWAYS use the obfuscated method name, but the server will accept both the obfuscated and cleartext method names.
+	GRPCMethodObfuscation string
 }
 
 func defaultOptions() Options {
@@ -49,6 +55,7 @@ func defaultOptions() Options {
 		StripEnumPrefix:              true,
 		RedactObjectUsingDebugRedact: false,
 		GRPC:                         true,
+		GRPCMethodObfuscation:        "",
 	}
 }
 
@@ -60,6 +67,7 @@ func (o *Options) parseOptions(opt string) error {
 		"RedactObjectUsingDebugRedact": &o.RedactObjectUsingDebugRedact,
 		"NamespacePrefix":              &o.NamespacePrefix,
 		"GRPC":                         &o.GRPC,
+		"GRPCMethodObfuscation":        &o.GRPCMethodObfuscation,
 	}
 
 	args := strings.Split(opt, ",")
